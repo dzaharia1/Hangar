@@ -89,10 +89,14 @@ extension View {
     /// anything older.
     @ViewBuilder
     func glassCard(cornerRadius: CGFloat = 16) -> some View {
+        #if compiler(>=6.3)
         if #available(macOS 26.0, *) {
             self.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         } else {
             self.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         }
+        #else
+        self.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        #endif
     }
 }

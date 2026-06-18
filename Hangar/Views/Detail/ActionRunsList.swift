@@ -8,7 +8,7 @@ struct ActionRunsList: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        SectionCard(title: "Action runs", systemImage: "play.circle") {
+        SectionCard(title: "GitHub action runs", systemImage: "play.circle") {
             VStack(spacing: 8) {
                 HStack {
                     Spacer()
