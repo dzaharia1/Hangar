@@ -1,8 +1,4 @@
-# Let Dan Code
-
-> The app is named **Let Dan Code**. The Xcode project, scheme, and source
-> folder are still called `Hangar` internally (the product builds as
-> `Let Dan Code.app`).
+# Hangar
 
 A native macOS (Tahoe / macOS 26, Liquid Glass) app for managing the Firebase
 apps created by the [`my-setup-scripts`](../my-setup-scripts) shell tools. It's a
@@ -75,7 +71,7 @@ open Hangar/Hangar.xcodeproj      # then press Run (⌘R)
 xcodebuild -project Hangar/Hangar.xcodeproj -scheme Hangar -configuration Debug build
 ```
 
-The build product is `Let Dan Code.app`. On first launch it looks for the scripts at
+The build product is `Hangar.app`. On first launch it looks for the scripts at
 `~/Projects/server-setup-scripts/my-setup-scripts` (and a couple of fallbacks).
 If it can't find them, the empty state offers **Locate Setup Scripts…** to pick
 the folder containing `setup-new-app.sh`.
