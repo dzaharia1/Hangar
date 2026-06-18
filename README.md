@@ -1,88 +1,71 @@
-# Hangar
+# Hangar 🛸
 
-A native macOS (Tahoe / macOS 26, Liquid Glass) app for managing the Firebase
-apps created by the [`my-setup-scripts`](../my-setup-scripts) shell tools. It's a
-SwiftUI front-end over those scripts — the shell version keeps working exactly as
-before; this is a graphical way to drive the same operations.
+Hangar is a premium SwiftUI-native macOS desktop application designed to orchestrate, monitor, and manage your cloud deployments. It provides a visual, elegant, and interactive dashboard directly on top of the CLI-based `server-setup-scripts`.
 
-## What it does
+With Hangar, the underlying shell tools continue working exactly as before, while you gain a beautiful "control tower" interface for driving setup, viewing logs, managing domains, and tracking live deployment runs.
 
-- **Sidebar** — your apps from `apps-registry.json`, split into **Active** and
-  **Archived** tabs, each with an initials glyph and primary domain.
-- **Detail** — for the selected app: local root folder (reveal in Finder / copy),
-  custom domains *and* the raw Firebase `*.web.app` URL, a link to the Firebase
-  Console overview, the GitHub repo, and a live **Action runs** history pulled
-  from GitHub Actions via `gh run list`.
-- **Add app** (the `+` button or ⌘N) — a dialog with two tabs:
-  - **Create app** — the App ID, both default domains, and the Firebase Project
-    ID **auto-populate from the app name as you type**. Edit any field and that
-    field stops auto-filling (its "Auto" badge disappears) while the others keep
-    tracking. Click **Create** and you land on the new app's detail page,
-    watching `setup-new-app.sh` stream its output live; when it finishes
-    successfully the page becomes a normal detail page.
-  - **Manually log app** — every registry field (id, name, domains, local root,
-    Firebase project id, GitHub repo, status, created-at) with the same
-    name-driven auto-fill. **No provisioning** — it just appends the entry to
-    `apps-registry.json` and commits/pushes it, the way the scripts do. Used for
-    migrating legacy apps into the registry.
-- **Archive / Restore** — runs `remove-app.sh` / `host-manager.sh restore-app`
-  with a confirmation and a live output sheet.
+---
 
-## Architecture
+## Capabilities & Features
 
-Hangar is a thin native orchestrator, not a reimplementation:
+*   **🗂️ Unified App Registry**: View your entire suite of active and archived applications loaded dynamically from `apps-registry.json`. Displays domains, localized project routes, Firebase console links, and status.
+*   **🏗️ Direct Provisioning**: Scaffold new apps or archive/restore old ones. Type in the app name, and let Hangar auto-populate default domains and Firebase project IDs as you type.
+*   **🪵 Live Terminal Stream**: Watch scripts execute in real-time. When provisioning an app, a terminal console streams the `setup-new-app.sh` stdout/stderr live, turning into a detail page upon success.
+*   **📥 Manual App Registry Logging**: Easily import and register legacy applications without provisioning them from scratch.
+*   **🐙 GitHub Actions Integration**: Fetch and display the recent execution status of GitHub Action runs for your repos using `gh run list`.
+*   **⚙️ Live Configuration Manager**: Edit your setup scripts settings (billing ID, Cloudflare tokens, zones, directories) inside the app, automatically syncing to the `.settings` file.
 
-- It **reads** `<scripts>/apps-registry/apps-registry.json` directly (the same
-  file the scripts read/write/commit).
-- It **shells out** to the existing scripts through a login `zsh` so they find
-  `gh`, `gcloud`, `firebase`, `jq`, `npm`, etc., streaming combined stdout/stderr
-  into a terminal-style console (`ScriptRunner`).
-- Registry decoding is **schema-tolerant**: it prefers the new `domains` (array)
-  and `local_root` fields but falls back to the legacy `domain` string and a path
-  computed from `LOCAL_PROJECTS_DIR` in `.deploy-secrets`, so older entries just
-  work.
+---
 
-### Source layout (`Hangar/`)
+## Installation & Setup
 
-| Area | Files |
-|---|---|
-| Models | `ManagedApp`, `DeploySecrets`, `ActionRun`, `AppAction`, `CreateDraft` |
-| Services | `AppController` (central state), `ScriptRunner`, `GitHubService`, `Paths`, `Shell` |
-| Views | `RootView`, `SidebarView`, `AppDetailView`, `ActionRunsList`, `CreatingView`, `CreateAppSheet`, `ActionProgressSheet`, `ConsoleView`, `Components` |
-| Theme | `Theme` (brand gradient + the `glassCard` Liquid Glass helper) |
+Follow these steps to clone the dependencies, build the macOS app, and link them together.
 
-## Companion script changes
+### 1. Clone the Setup Scripts (Prerequisite)
+Hangar works as a graphical interface over the shell setup scripts. You must first clone the script repository onto your local machine:
 
-`setup-new-app.sh` got three small **additive** changes (it still runs fine on
-its own):
-
-1. An optional `-fid, --firebase-id` flag (so the GUI's Firebase Project ID is
-   honored; otherwise it's generated as before).
-2. It now writes `domains` (array) and `local_root` into the registry alongside
-   the legacy `domain` string.
-
-## Build & run
-
-Requires Xcode 26+ on macOS 26.
-
-```sh
-open Hangar/Hangar.xcodeproj      # then press Run (⌘R)
-# or:
-xcodebuild -project Hangar/Hangar.xcodeproj -scheme Hangar -configuration Debug build
+```bash
+# Clone the prerequisite server setup scripts repository
+git clone https://github.com/dzaharia1/server-setup-scripts.git ~/Projects/server-setup-scripts
 ```
 
-The build product is `Hangar.app`. On first launch it looks for the scripts at
-`~/Projects/server-setup-scripts/my-setup-scripts` (and a couple of fallbacks).
-If it can't find them, the empty state offers **Locate Setup Scripts…** to pick
-the folder containing `setup-new-app.sh`.
+### 2. Build and Run Hangar
+Hangar is built natively with Swift and SwiftUI.
 
-> Not sandboxed — it spawns the setup scripts and reads your projects directory,
-> which the App Sandbox would block. Fine for a personal local tool; it would
-> need rework to ship via the Mac App Store.
+1. Ensure you have **Xcode 16+** installed on **macOS 15 (Sequoia)** or newer.
+2. Open the Xcode project:
+   ```bash
+   open Hangar/Hangar.xcodeproj
+   ```
+3. In Xcode, ensure the **Hangar** target is selected, and press **⌘R** (or click the Play button) to build and run the app.
+4. The build app `Hangar.app` will launch. You can copy it to your `/Applications` directory if desired.
 
-## Notes / future work
+### 3. Point Hangar to the Setup Scripts
+On your first launch, Hangar will check common locations (like `~/Projects/server-setup-scripts`) for the scripts. If it cannot auto-detect them, you will see an empty state:
 
-- App glyphs are gradient initials for now — drop in real per-app iconography
-  when it's ready (`AppGlyph` in `Components.swift`).
-- The registry is read on demand; use the refresh button (or ⌘R) to pick up
-  changes made by running the shell scripts directly in a terminal.
+1. Click **Locate Setup Scripts…** (or open Settings with **⌘,** / select **Hangar > Settings…**).
+2. Under **App settings**, look for **Setup scripts folder**.
+3. Click **Change…** and select the folder where you cloned `server-setup-scripts` (e.g., `/Users/yourusername/Projects/server-setup-scripts`). *Note: This folder must contain the `setup-new-app.sh` script.*
+4. Under **Hangar settings**, configure your setup variables:
+   *   **Local Projects Directory**: The directory where new projects are scaffolded (e.g., `~/Projects`).
+   *   **Billing Account ID**: Your Google Cloud/Firebase billing account ID.
+   *   **Cloudflare API Token & Zones**: For automated domain provisioning.
+5. Click **Save**. Hangar will write these configurations directly to the `.settings` shell config file within your scripts repository.
+
+---
+
+## System Architecture
+
+Hangar is built as a non-sandboxed native orchestrator to allow seamless integration with your local files and system commands:
+*   **File Syncing**: Directly parses and writes to `<scripts-folder>/apps-registry/apps-registry.json`.
+*   **Shell Orchestration**: Spawns sub-processes using a login `zsh` session (`ScriptRunner`), ensuring that your local tools like `gh`, `firebase`, `gcloud`, `npm`, `jq`, and `git` are loaded with your system environment.
+*   **Settings Management**: Edits compile into the standard bash syntax for `.settings` so that your manual terminal scripts and Hangar use the exact same configuration state.
+
+---
+
+## Troubleshooting & Tips
+> [!NOTE]
+> Since Hangar executes commands and reads your workspace directory, the App Sandbox is disabled. This is intended for local developer workflows.
+
+*   **Refresh Registry**: Hangar loads the registry on startup. Press **⌘R** (or click the reload button) to force a refresh if you've run scripts or modified files manually in your terminal.
+*   **CLI Requirements**: Make sure you have `gh` (GitHub CLI), `firebase-tools`, `gcloud`, and `npm` installed and authenticated in your terminal environment.
