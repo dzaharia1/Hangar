@@ -29,18 +29,27 @@ With Hangar, the underlying shell tools continue working exactly as before, whil
 
 ## Installation & Setup
 
-Follow these steps to clone the dependencies, build the macOS app, and link them together.
-
-### 1. Clone the Setup Scripts (Prerequisite)
-Hangar works as a graphical interface over the shell setup scripts. You must first clone the script repository onto your local machine:
-
+Before installing Hangar, clone the prerequisite server setup scripts repository to your local machine:
 ```bash
-# Clone the prerequisite server setup scripts repository
 git clone https://github.com/dzaharia1/server-setup-scripts.git ~/Projects/server-setup-scripts
 ```
 
-### 2. Build and Run Hangar
-Hangar is built natively with Swift and SwiftUI.
+Next, select one of the two installation paths below to get Hangar up and running:
+
+### Path A: Downloading the Precompiled Release (Recommended)
+This is the fastest method. Precompiled releases are built locally using Xcode 26 to include full Tahoe SDK features (such as the Liquid Glass theme).
+
+1. Download the latest `Hangar.zip` from [GitHub Releases](https://github.com/dzaharia1/Hangar/releases).
+2. Unzip the file and move `Hangar.app` into your `/Applications` folder.
+3. Because the release is built automatically without personal code-signing/notarization certificates, macOS Gatekeeper will block it with a warning (*"Apple could not verify..."*).
+4. To bypass this, open your terminal and remove the quarantine attribute:
+   ```bash
+   xattr -d com.apple.quarantine /Applications/Hangar.app
+   ```
+5. Launch the app normally.
+
+### Path B: Building from Source (Local Compilation)
+If you prefer to compile Hangar from source:
 
 1. Ensure you have **Xcode 16+** installed on **macOS 15 (Sequoia)** or newer.
 2. Open the Xcode project:
@@ -48,20 +57,12 @@ Hangar is built natively with Swift and SwiftUI.
    open Hangar/Hangar.xcodeproj
    ```
 3. In Xcode, ensure the **Hangar** target is selected, and press **⌘R** (or click the Play button) to build and run the app.
-4. The build app `Hangar.app` will launch. You can copy it to your `/Applications` directory if desired.
+4. Copy the compiled `Hangar.app` binary to `/Applications` if desired.
 
-### Alternative: Running Precompiled Releases (macOS Gatekeeper)
-If you downloaded a precompiled `.zip` release directly from GitHub:
-1. Unzip the file and move `Hangar.app` to your `/Applications` directory.
-2. Because the release is built automatically on GitHub without personal code-signing/notarization certificates, macOS Gatekeeper will block it with a warning (*"Apple could not verify..."*).
-3. To bypass this, open your terminal and strip the quarantine flag:
-   ```bash
-   xattr -d com.apple.quarantine /Applications/Hangar.app
-   ```
-4. Launch the app normally.
+---
 
-### 3. Point Hangar to the Setup Scripts
-On your first launch, Hangar will check common locations (like `~/Projects/server-setup-scripts`) for the scripts. If it cannot auto-detect them, you will see an empty state:
+### Linking Hangar to the Setup Scripts
+On your first launch, Hangar will check common locations (like `~/Projects/server-setup-scripts`) for the scripts. If it cannot auto-detect them, you will see an empty setup state:
 
 1. Click **Locate Setup Scripts…** (or open Settings with **⌘,** / select **Hangar > Settings…**).
 2. Under **App settings**, look for **Setup scripts folder**.
