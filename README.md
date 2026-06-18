@@ -1,8 +1,11 @@
-# Hangar 🛸
+# Hangar 🛩️
+![logo](./hangar/Assets.xcassets/AppIcon.appiconset/icon_128x128.png)
 
-Hangar is a premium SwiftUI-native macOS desktop application designed to orchestrate, monitor, and manage your cloud deployments. It provides a visual, elegant, and interactive dashboard directly on top of the CLI-based `server-setup-scripts`.
+Hangar is a premium SwiftUI-native macOS desktop application designed to orchestrate, monitor, and manage your Firebase deployments. It provides a visual, elegant, and interactive dashboard directly on top of the CLI-based `server-setup-scripts`.
 
 With Hangar, the underlying shell tools continue working exactly as before, while you gain a beautiful "control tower" interface for driving setup, viewing logs, managing domains, and tracking live deployment runs.
+
+![Hangar Home Screen](./screenshot.png)
 
 ---
 
@@ -16,6 +19,13 @@ With Hangar, the underlying shell tools continue working exactly as before, whil
 *   **⚙️ Live Configuration Manager**: Edit your setup scripts settings (billing ID, Cloudflare tokens, zones, directories) inside the app, automatically syncing to the `.settings` file.
 
 ---
+
+## Prerequisites
+- A Firebase account with a cloud billing account associated with it
+- Your domain is managed on Cloudflare
+- You have the GitHub CLI installed and authenticated
+- You have the Firebase CLI installed and authenticated
+
 
 ## Installation & Setup
 
