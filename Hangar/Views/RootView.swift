@@ -13,26 +13,37 @@ struct RootView: View {
         }
         .frame(minWidth: 940, minHeight: 620)
         .toolbar {
-            ToolbarItemGroup(placement: .navigation) {
-                Button {
-                    controller.showCreateSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .help("Add an app")
-                .disabled(controller.scriptsDirectory == nil)
+            ToolbarItem(placement: .navigation) {
+                HStack(spacing: 4) {
+                    Button {
+                        controller.showCreateSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                        Text("Add an app")
+                    }
+                    .help("Add an app")
+                    .disabled(controller.scriptsDirectory == nil)
 
-                Button {
-                    controller.load()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .help("Reload from registry")
+                    Rectangle()
+                        .frame(width: 1, height: 16)
+                        .foregroundColor(Color(nsColor: .separatorColor))
 
-                Text("Let Dan Code")
-                    .font(.headline)
-                    .padding(.leading, 4)
+                    Button {
+                        controller.load()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Refresh")
+                    }
+                    .help("Reload from registry")
+                }
+                .padding(2)
             }
+
+            // ToolbarItem(placement: .principal) {
+            //     Text("Let Dan Code")
+            //         .font(.headline)
+            //         .background(.clear)
+            // }
         }
         .sheet(isPresented: $controller.showCreateSheet) {
             CreateAppSheet()
