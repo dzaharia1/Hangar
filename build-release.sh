@@ -16,7 +16,10 @@ xcodebuild -project Hangar.xcodeproj \
            CODE_SIGN_ENTITLEMENTS="" > /dev/null
 
 echo "📦 Packaging Hangar.app..."
-zip -r Hangar.zip build/Build/Products/Release/Hangar.app > /dev/null
+ZIP_PATH="$(pwd)/Hangar.zip"
+cd build/Build/Products/Release
+zip -r "$ZIP_PATH" Hangar.app > /dev/null
+cd - > /dev/null
 
 echo "🧹 Cleaning up intermediate build files..."
 rm -rf build
