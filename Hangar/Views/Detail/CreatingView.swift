@@ -22,7 +22,7 @@ struct CreatingView: View {
 
     private var header: some View {
         HStack(spacing: 14) {
-            AppGlyph(name: app.name, size: 48)
+            AppGlyph(id: app.id, name: app.name, size: 48)
             VStack(alignment: .leading, spacing: 4) {
                 Text(app.name)
                     .font(.title.weight(.bold))

@@ -46,7 +46,7 @@ struct AppDetailView: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 14) {
-            AppGlyph(name: app.name, size: 44)
+            AppGlyph(id: app.id, name: app.name, size: 44)
             VStack(alignment: .leading, spacing: 4) {
                 Text(app.name)
                     .font(.title2.weight(.semibold))

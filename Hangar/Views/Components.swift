@@ -4,6 +4,7 @@ import AppKit
 /// A rounded gradient tile showing an app's initials — stands in for real
 /// per-app iconography until those exist.
 struct AppGlyph: View {
+    let id: String
     let name: String
     var size: CGFloat = 28
 
@@ -16,7 +17,7 @@ struct AppGlyph: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-            .fill(Theme.gradient(for: name))
+            .fill(Theme.gradient(for: id))
             .frame(width: size, height: size)
             .overlay(
                 Text(initials)

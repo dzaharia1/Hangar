@@ -88,7 +88,7 @@ struct AppRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            AppGlyph(name: app.name, size: 30)
+            AppGlyph(id: app.id, name: app.name, size: 30)
             VStack(alignment: .leading, spacing: 2) {
                 Text(app.name)
                     .font(.body.weight(.semibold))
