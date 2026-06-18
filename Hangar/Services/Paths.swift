@@ -39,4 +39,8 @@ enum Paths {
     static func deploySecretsFile(in scriptsDir: String) -> String {
         "\(scriptsDir)/.deploy-secrets"
     }
+
+    static func settingsFile(in scriptsDir: String) -> String {
+        "\(scriptsDir)/.settings"
+    }
 }

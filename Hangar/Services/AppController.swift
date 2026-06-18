@@ -15,6 +15,7 @@ final class AppController: ObservableObject {
     @Published var loadError: String?
 
     @Published var showCreateSheet = false
+    @Published var showSettingsSheet = false
     @Published var errorMessage: String?
     @Published var githubUser: String?
 
@@ -27,6 +28,7 @@ final class AppController: ObservableObject {
     @Published var runningAction: AppAction?
 
     private var deploySecrets = DeploySecrets()
+    private var settings = Settings()
 
     init() {
         scriptsDirectory = Paths.scriptsDirectory
@@ -35,7 +37,14 @@ final class AppController: ObservableObject {
         ensureGitHubUser()
     }
 
-    var localProjectsDir: String? { deploySecrets.localProjectsDir }
+    /// Prefer the new `.settings` file, falling back to the legacy
+    /// `.deploy-secrets` for installs that predate it.
+    var localProjectsDir: String? {
+        settings.expandedLocalProjectsDir ?? deploySecrets.localProjectsDir
+    }
+
+    /// A snapshot of the current `.settings` for the editor to start from.
+    var currentSettings: Settings { settings }
 
     /// Look up the authenticated GitHub username once, for auto-filling repo
     /// paths in the manual-log form.
@@ -57,6 +66,7 @@ final class AppController: ObservableObject {
         }
 
         deploySecrets = DeploySecrets.load(from: Paths.deploySecretsFile(in: dir))
+        settings = Settings.load(from: Paths.settingsFile(in: dir))
 
         let registryPath = Paths.registryFile(in: dir)
         guard let data = FileManager.default.contents(atPath: registryPath) else {
@@ -85,6 +95,23 @@ final class AppController: ObservableObject {
         Paths.setScriptsDirectory(path)
         scriptsDirectory = path
         load()
+    }
+
+    // MARK: - Settings
+
+    /// Write the edited `.settings` back to disk, then reload so derived values
+    /// (e.g. local roots built from `LOCAL_PROJECTS_DIR`) pick up the change.
+    func saveSettings(_ newSettings: Settings) {
+        guard let dir = scriptsDirectory else {
+            errorMessage = "Choose your setup scripts folder before editing settings."
+            return
+        }
+        do {
+            try newSettings.write(to: Paths.settingsFile(in: dir))
+            load()
+        } catch {
+            errorMessage = "Couldn't save settings.\n\n\(error.localizedDescription)"
+        }
     }
 
     // MARK: - Derived

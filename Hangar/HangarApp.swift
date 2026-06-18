@@ -9,8 +9,14 @@ struct HangarApp: App {
             RootView()
                 .environmentObject(controller)
         }
-        .windowStyle(.hiddenTitleBar)
         .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") {
+                    controller.showSettingsSheet = true
+                }
+                .keyboardShortcut(",", modifiers: .command)
+                .disabled(controller.scriptsDirectory == nil)
+            }
             CommandGroup(replacing: .newItem) {
                 Button("New App…") {
                     controller.showCreateSheet = true

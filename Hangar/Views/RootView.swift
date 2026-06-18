@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var controller: AppController
+    @AppStorage("appTheme") private var appTheme: AppTheme = .system
 
     var body: some View {
         NavigationSplitView {
@@ -12,6 +13,7 @@ struct RootView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 940, minHeight: 620)
+        .preferredColorScheme(appTheme.colorScheme)
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 HStack(spacing: 4) {
@@ -36,17 +38,28 @@ struct RootView: View {
                     }
                     .help("Reload from registry")
                 }
-                .padding(2)
+                .frame(maxHeight: .infinity)
             }
 
-            // ToolbarItem(placement: .principal) {
-            //     Text("Let Dan Code")
-            //         .font(.headline)
-            //         .background(.clear)
-            // }
+            // Anchored to the trailing edge of the toolbar (top-right of the
+            // window), separate from the leading actions.
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    controller.showSettingsSheet = true
+                } label: {
+                    Image(systemName: "gearshape")
+                    Text("Settings")
+                }
+                .help("Settings")
+                .disabled(controller.scriptsDirectory == nil)
+                .frame(maxHeight: .infinity)
+            }
         }
         .sheet(isPresented: $controller.showCreateSheet) {
             CreateAppSheet()
+        }
+        .sheet(isPresented: $controller.showSettingsSheet) {
+            SettingsSheet(settings: controller.currentSettings)
         }
         .sheet(item: $controller.runningAction) { action in
             ActionProgressSheet(action: action, runner: controller.actionRunner)
