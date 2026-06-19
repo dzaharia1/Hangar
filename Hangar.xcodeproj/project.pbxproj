@@ -15,24 +15,6 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		AA0000000000000000000010 /* Install to Applications */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Install to Applications";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "rsync -a --delete \"${BUILT_PRODUCTS_DIR}/${FULL_PRODUCT_NAME}/\" \"/Applications/${FULL_PRODUCT_NAME}/\"\n";
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,7 +54,6 @@
 				AA0000000000000000000007 /* Sources */,
 				AA0000000000000000000008 /* Frameworks */,
 				AA0000000000000000000009 /* Resources */,
-				AA0000000000000000000010 /* Install to Applications */,
 			);
 			buildRules = (
 			);

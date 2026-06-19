@@ -17,25 +17,17 @@ xcodebuild -project Hangar.xcodeproj \
            CODE_SIGN_ENTITLEMENTS="" > /dev/null
 
 APP_PATH="build/Build/Products/Release/Hangar.app"
-DEST_PATH="/Applications/Hangar.app"
 
-echo "🚚 Installing Hangar to $DEST_PATH..."
+echo "🚚 Preparing Hangar for local run..."
 
 # Kill any currently running instances of Hangar
 pkill -x Hangar 2>/dev/null || true
 sleep 0.5
 
-# Replace the application bundle in /Applications
-rm -rf "$DEST_PATH"
-cp -R "$APP_PATH" "$DEST_PATH"
-
 # Strip quarantine attributes to allow the unsigned app to run
-xattr -cr "$DEST_PATH" 2>/dev/null || true
+xattr -cr "$APP_PATH" 2>/dev/null || true
 
-# Clean up build artifacts
-rm -rf build
+echo "🚀 Launching Hangar from build directory..."
+open "$APP_PATH"
 
-echo "🚀 Launching Hangar..."
-open "$DEST_PATH"
-
-echo "✅ Hangar successfully built, installed, and launched!"
+echo "✅ Hangar successfully built and launched!"
