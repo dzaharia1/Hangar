@@ -10,6 +10,31 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+# Load environment variables from .env file if present in the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  echo "🔌 Loading environment variables from .env..."
+  while IFS= read -r line || [ -n "$line" ]; do
+    # Strip leading/trailing whitespaces, skip comments and empty lines
+    line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+    [[ "$line" =~ ^# ]] && continue
+    [[ -z "$line" ]] && continue
+    # Strip optional "export " prefix and export
+    line=${line#export }
+    export "$line"
+  done < "$SCRIPT_DIR/.env"
+fi
+
+# Validate code signing / notarization environment variables
+if [ -z "$APPLE_ID" ] || [ -z "$APPLE_PASSWORD" ] || [ -z "$DEVELOPMENT_TEAM" ]; then
+  echo "❌ Error: Please set the following environment variables for code signing and notarization:"
+  echo "   export APPLE_ID=\"your-apple-id@email.com\""
+  echo "   export APPLE_PASSWORD=\"your-app-specific-password\""
+  echo "   export DEVELOPMENT_TEAM=\"YOUR_TEAM_ID\""
+  echo "   (Alternatively, create a .env file in the same directory as this script)"
+  exit 1
+fi
+
 VERSION="$1"
 echo "🔖 Setting version to $VERSION in Hangar.xcodeproj..."
 
@@ -27,15 +52,13 @@ echo "🔨 Building Hangar locally in Release configuration..."
 # Clean build directory if it exists
 rm -rf build Hangar.zip
 
-# Run xcodebuild using local developer tools (ensuring Tahoe/macOS 26 capabilities are compiled in)
+# Run xcodebuild using local developer tools (signing with Developer ID Application)
 xcodebuild -project Hangar.xcodeproj \
            -scheme Hangar \
            -configuration Release \
            -derivedDataPath build \
-           CODE_SIGNING_ALLOWED=NO \
-           CODE_SIGNING_REQUIRED=NO \
-           CODE_SIGN_IDENTITY="" \
-           CODE_SIGN_ENTITLEMENTS="" > /dev/null
+           CODE_SIGN_IDENTITY="Developer ID Application" \
+           DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" > /dev/null
 
 echo "📸 Capturing screenshot..."
 APP_PATH="build/Build/Products/Release/Hangar.app"
@@ -98,7 +121,32 @@ fi
 osascript -e 'tell application "Hangar" to quit' 2>/dev/null || true
 sleep 0.5
 
-echo "📦 Packaging Hangar.app..."
+# 1. Package the signed .app into a temporary zip for notarization
+echo "📦 Creating temporary zip for Notarization..."
+APP_PATH="build/Build/Products/Release/Hangar.app"
+ZIP_PATH_TEMP="$(pwd)/Hangar_Notary.zip"
+
+cd build/Build/Products/Release
+zip -r "$ZIP_PATH_TEMP" Hangar.app > /dev/null
+cd - > /dev/null
+
+# 2. Submit to Apple Notary Service
+echo "🚀 Submitting Hangar to Apple Notary Service..."
+xcrun notarytool submit "$ZIP_PATH_TEMP" \
+      --apple-id "$APPLE_ID" \
+      --password "$APPLE_PASSWORD" \
+      --team-id "$DEVELOPMENT_TEAM" \
+      --wait
+
+# Clean up temporary zip
+rm -f "$ZIP_PATH_TEMP"
+
+# 3. Staple the Notary ticket back to the app bundle
+echo "🎫 Stapling Notarization ticket..."
+xcrun stapler staple "$APP_PATH"
+
+# 4. Package the final notarized app for distribution
+echo "📦 Packaging final Hangar.zip..."
 ZIP_PATH="$(pwd)/Hangar.zip"
 cd build/Build/Products/Release
 zip -r "$ZIP_PATH" Hangar.app > /dev/null
