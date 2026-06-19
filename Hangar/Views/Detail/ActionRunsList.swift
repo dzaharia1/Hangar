@@ -25,7 +25,7 @@ struct ActionRunsList: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(maxWidth: 320)
+                .frame(maxWidth: 400, alignment: .trailing)
                 .layoutPriority(-1)
             }
         } content: {

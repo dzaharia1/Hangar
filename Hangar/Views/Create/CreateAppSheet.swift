@@ -5,8 +5,8 @@ import SwiftUI
 /// registry without provisioning — used when migrating legacy apps).
 struct CreateAppSheet: View {
     enum Mode: String, CaseIterable, Identifiable {
-        case create = "Create app"
-        case manual = "Manually log app"
+        case create = "Create a new app"
+        case manual = "Log an existing app"
         var id: String { rawValue }
     }
 

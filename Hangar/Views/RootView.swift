@@ -6,28 +6,30 @@ struct RootView: View {
 
     @State private var showingArchiveConfirm = false
     @State private var confirmAppName = ""
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView()
                 .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 360)
         } detail: {
             detail
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .toolbar(removing: .sidebarToggle)
         .frame(minWidth: 940, minHeight: 620)
         .preferredColorScheme(appTheme.colorScheme)
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button {
-                    controller.showCreateSheet = true
+                    controller.showSettingsSheet = true
                 } label: {
-                    Image(systemName: "plus")
-                    Text("Add an app")
+                    Image(systemName: "gearshape")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 28, height: 28)
                 }
-                .help("Add an app")
+                .help("Settings")
                 .disabled(controller.scriptsDirectory == nil)
-                .frame(maxHeight: .infinity)
             }
 
             ToolbarItem(placement: .principal) {
@@ -60,12 +62,16 @@ struct RootView: View {
 
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    controller.showSettingsSheet = true
+                    controller.showCreateSheet = true
                 } label: {
-                    Label("Settings", systemImage: "gearshape")
+                    Image(systemName: "plus")
+                    Text("Add an app")
                 }
-                .help("Settings")
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+                .help("Add an app")
                 .disabled(controller.scriptsDirectory == nil)
+                .frame(maxHeight: .infinity)
             }
         }
         .sheet(isPresented: $controller.showCreateSheet) {
