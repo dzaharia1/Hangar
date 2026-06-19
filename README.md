@@ -1,5 +1,5 @@
-# Hangar 🛩️
-![logo](./hangar/Assets.xcassets/AppIcon.appiconset/icon_128x128.png)
+![logo](./hangar/Assets.xcassets/AppIcon.appiconset/icon_512x512.png)
+# Hangar 
 
 Hangar is a premium SwiftUI-native macOS desktop application designed to orchestrate, monitor, and manage your Firebase deployments. It provides a visual, elegant, and interactive dashboard directly on top of the CLI-based `server-setup-scripts`.
 
