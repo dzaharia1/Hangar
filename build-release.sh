@@ -26,26 +26,43 @@ sleep 0.5
 open "$APP_PATH"
 
 # Poll until the window is ready (up to 10s)
+# Uses System Events process targeting — more reliable than app-name scripting
+# when the app is launched from a non-standard build path.
 BOUNDS=""
 for i in $(seq 1 20); do
-  BOUNDS=$(osascript -e 'tell application "Hangar" to get bounds of window 1' 2>/dev/null) && break
+  BOUNDS=$(osascript -e 'tell application "System Events" to tell process "Hangar" to get position of window 1' 2>/dev/null) && break
   sleep 0.5
 done
 
 if [ -z "$BOUNDS" ]; then
   echo "⚠️  Skipping screenshot — app window didn't appear"
 else
-  # Resize to fixed dimensions for a consistent screenshot
-  osascript -e 'tell application "Hangar" to set bounds of window 1 to {100, 100, 1200, 800}'
-  sleep 1  # let content render at new size
-  RECT=$(osascript <<'OSASCRIPT'
-tell application "Hangar"
-  set {x1, y1, x2, y2} to bounds of window 1
-  return (x1 as string) & "," & (y1 as string) & "," & ((x2 - x1) as string) & "," & ((y2 - y1) as string)
+  # Resize to fixed 1100×700 for a consistent screenshot
+  osascript <<'OSASCRIPT'
+tell application "System Events"
+  tell process "Hangar"
+    set position of window 1 to {100, 100}
+    set size of window 1 to {1100, 700}
+  end tell
 end tell
 OSASCRIPT
+  sleep 1  # let content render at new size
+  # Get the CGWindowID so screencapture -l captures just the window with its
+  # shadow and rounded corners, matching cmd+shift+4+spacebar behaviour.
+  WINDOW_ID=$(swift - <<'SWIFT'
+import CoreGraphics
+let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as! [[String: Any]]
+for window in windows {
+    if window["kCGWindowOwnerName"] as? String == "Hangar",
+       window["kCGWindowLayer"] as? Int == 0,
+       let id = window["kCGWindowNumber"] as? Int {
+        print(id)
+        break
+    }
+}
+SWIFT
 )
-  screencapture -x -R "$RECT" screenshot.png
+  screencapture -x -l "$WINDOW_ID" screenshot.png
   echo "✅ screenshot.png updated"
 fi
 
