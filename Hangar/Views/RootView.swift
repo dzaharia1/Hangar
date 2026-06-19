@@ -24,9 +24,18 @@ struct RootView: View {
                 Button {
                     controller.showSettingsSheet = true
                 } label: {
-                    Image(systemName: "gearshape")
-                        .font(.body.weight(.semibold))
-                        .frame(width: 28, height: 28)
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "gearshape")
+                            .font(.body.weight(.semibold))
+                            .frame(width: 28, height: 28)
+                        
+                        if controller.isUpdateAvailable {
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 7, height: 7)
+                                .offset(x: 2, y: -2)
+                        }
+                    }
                 }
                 .help("Settings")
                 .disabled(controller.scriptsDirectory == nil)

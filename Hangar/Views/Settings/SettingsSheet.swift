@@ -12,6 +12,7 @@ struct SettingsSheet: View {
     @AppStorage("appTheme") private var appTheme: AppTheme = .system
     @State private var revealToken = false
     @State private var scriptsDirError: String?
+    @ObservedObject private var updateManager = UpdateManager.shared
 
     init(settings: Settings) {
         _draft = StateObject(wrappedValue: SettingsDraft(settings))
@@ -80,6 +81,13 @@ struct SettingsSheet: View {
                     FormField(label: "Cloudflare zones") {
                         zonesEditor
                     }
+
+                    Divider().padding(.vertical, 2)
+
+                    sectionHeader("Updates",
+                                  subtitle: "Check for updates and manage Hangar versions.")
+
+                    updatesSection
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 12)
@@ -265,6 +273,98 @@ struct SettingsSheet: View {
         }
         if panel.runModal() == .OK, let url = panel.url {
             draft.localProjectsDir = Settings.relativizeToHome(url.path)
+        }
+    }
+
+    // MARK: - Updates
+
+    private var updatesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Text("Current version:")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                    .font(.body.weight(.medium))
+                
+                Spacer()
+                
+                if updateManager.isChecking {
+                    ProgressView()
+                        .controlSize(.small)
+                } else if updateManager.isDownloading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Button("Check for Updates") {
+                        Task {
+                            await updateManager.checkForUpdates()
+                        }
+                    }
+                    .disabled(updateManager.isChecking || updateManager.isDownloading)
+                }
+            }
+            
+            if let error = updateManager.errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+            
+            if updateManager.isUpdateAvailable, let latestVersion = updateManager.latestVersion {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundStyle(.blue)
+                        Text("Version \(latestVersion) is available!")
+                            .font(.body.weight(.semibold))
+                        Spacer()
+                    }
+                    
+                    if let notes = updateManager.latestReleaseNotes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        ScrollView {
+                            Text(notes)
+                                .font(.caption.weight(.regular))
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
+                        }
+                        .frame(maxHeight: 100)
+                        .padding(8)
+                        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                    }
+                    
+                    HStack {
+                        Spacer()
+                        if updateManager.isDownloading {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Downloading update…")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            Button("Install & Relaunch") {
+                                Task {
+                                    await updateManager.installUpdate()
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+                }
+                .padding(12)
+                .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(.blue.opacity(0.3), lineWidth: 1)
+                )
+            } else if !updateManager.isChecking {
+                Text("Hangar is up to date.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }

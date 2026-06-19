@@ -30,8 +30,11 @@ final class AppController: ObservableObject {
     let actionRunner = ScriptRunner()
     @Published var runningAction: AppAction?
 
+    @Published var isUpdateAvailable = false
+
     private var deploySecrets = DeploySecrets()
     private var settings = Settings()
+    private var cancellables = Set<AnyCancellable>()
 
     init() {
         scriptsDirectory = Paths.scriptsDirectory
@@ -39,6 +42,15 @@ final class AppController: ObservableObject {
         selectedAppID = visibleApps.first?.id
         ensureGitHubUser()
         syncRegistry(showErrorOnFailure: false)
+
+        UpdateManager.shared.$isUpdateAvailable
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] available in
+                self?.isUpdateAvailable = available
+            }
+            .store(in: &cancellables)
+
+        UpdateManager.shared.startPeriodicChecks()
     }
 
     /// Prefer the new `.settings` file, falling back to the legacy
