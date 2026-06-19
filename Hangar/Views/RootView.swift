@@ -16,20 +16,19 @@ struct RootView: View {
         .preferredColorScheme(appTheme.colorScheme)
         .toolbar {
             ToolbarItem(placement: .navigation) {
+                Button {
+                    controller.showCreateSheet = true
+                } label: {
+                    Image(systemName: "plus")
+                    Text("Add an app")
+                }
+                .help("Add an app")
+                .disabled(controller.scriptsDirectory == nil)
+                .frame(maxHeight: .infinity)
+            }
+
+            ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 4) {
-                    Button {
-                        controller.showCreateSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                        Text("Add an app")
-                    }
-                    .help("Add an app")
-                    .disabled(controller.scriptsDirectory == nil)
-
-                    Rectangle()
-                        .frame(width: 1, height: 16)
-                        .foregroundColor(Color(nsColor: .separatorColor))
-
                     Button {
                         controller.load()
                     } label: {
@@ -37,21 +36,20 @@ struct RootView: View {
                         Text("Refresh")
                     }
                     .help("Reload from registry")
-                }
-                .frame(maxHeight: .infinity)
-            }
 
-            // Anchored to the trailing edge of the toolbar (top-right of the
-            // window), separate from the leading actions.
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    controller.showSettingsSheet = true
-                } label: {
-                    Image(systemName: "gearshape")
-                    Text("Settings")
+                    Rectangle()
+                        .frame(width: 1, height: 16)
+                        .foregroundColor(Color(nsColor: .separatorColor))
+
+                    Button {
+                        controller.showSettingsSheet = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                        Text("Settings")
+                    }
+                    .help("Settings")
+                    .disabled(controller.scriptsDirectory == nil)
                 }
-                .help("Settings")
-                .disabled(controller.scriptsDirectory == nil)
                 .frame(maxHeight: .infinity)
             }
         }

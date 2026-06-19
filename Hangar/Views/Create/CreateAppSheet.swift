@@ -116,14 +116,14 @@ struct CreateAppForm: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     FormField(label: "App name") {
-                        TextField("Wedding Website", text: Binding(
+                        TextField("My New App Idea", text: Binding(
                             get: { draft.name }, set: { draft.setName($0) }
                         ))
                         .textFieldStyle(.roundedBorder)
                         .focused($nameFocused)
                     }
                     FormField(label: "App ID", auto: draft.appIDAuto) {
-                        monoField("wedding-website", get: { draft.appID }, set: { draft.setAppID($0) })
+                        monoField("my-new-app-idea", get: { draft.appID }, set: { draft.setAppID($0) })
                     }
                     FormField(label: "Domains", auto: draft.domainsAuto) {
                         DomainListEditor(
@@ -134,7 +134,7 @@ struct CreateAppForm: View {
                         )
                     }
                     FormField(label: "Firebase Project ID", auto: draft.firebaseAuto) {
-                        monoField("wedding-website-12345", get: { draft.firebaseProjectID }, set: { draft.setFirebaseProjectID($0) })
+                        monoField("my-new-app-idea-12345", get: { draft.firebaseProjectID }, set: { draft.setFirebaseProjectID($0) })
                     }
                 }
                 .padding(.horizontal, 24)
@@ -176,13 +176,13 @@ struct ManualLogForm: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     FormField(label: "App name") {
-                        TextField("Wedding Website", text: Binding(
+                        TextField("My New App Idea", text: Binding(
                             get: { draft.name }, set: { draft.setName($0) }
                         ))
                         .textFieldStyle(.roundedBorder)
                     }
                     FormField(label: "App ID", auto: draft.appIDAuto) {
-                        monoField("wedding-website", get: { draft.appID }, set: { draft.setAppID($0) })
+                        monoField("my-new-app-idea", get: { draft.appID }, set: { draft.setAppID($0) })
                     }
                     FormField(label: "Domains", auto: draft.domainsAuto) {
                         DomainListEditor(
@@ -193,13 +193,13 @@ struct ManualLogForm: View {
                         )
                     }
                     FormField(label: "Firebase Project ID", auto: draft.firebaseAuto) {
-                        monoField("wedding-website-12345", get: { draft.firebaseProjectID }, set: { draft.setFirebaseProjectID($0) })
+                        monoField("my-new-app-idea-12345", get: { draft.firebaseProjectID }, set: { draft.setFirebaseProjectID($0) })
                     }
                     FormField(label: "Local root", auto: draft.localRootAuto) {
-                        monoField("~/Projects/wedding-website", get: { draft.localRoot }, set: { draft.setLocalRoot($0) })
+                        monoField("~/Projects/my-new-app-idea", get: { draft.localRoot }, set: { draft.setLocalRoot($0) })
                     }
                     FormField(label: "GitHub repo", auto: draft.githubAuto) {
-                        monoField("github.com/user/wedding-website", get: { draft.githubRepo }, set: { draft.setGithubRepo($0) })
+                        monoField("github.com/user/my-new-app-idea", get: { draft.githubRepo }, set: { draft.setGithubRepo($0) })
                     }
                     HStack(alignment: .top, spacing: 16) {
                         FormField(label: "Status") {
