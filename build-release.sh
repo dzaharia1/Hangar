@@ -4,6 +4,25 @@ set -e
 # Use the Xcode.app developer path to ensure we have the necessary macOS SDKs
 export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 
+# Validate version argument
+if [ -z "$1" ]; then
+  echo "❌ Error: Please specify a version (e.g., ./build-release.sh 1.0.19)"
+  exit 1
+fi
+
+VERSION="$1"
+echo "🔖 Setting version to $VERSION in Hangar.xcodeproj..."
+
+# Extract build number (last component of the version, e.g., 19 from 1.0.19)
+BUILD_NUMBER=$(echo "$VERSION" | awk -F. '{print $3}')
+if [ -z "$BUILD_NUMBER" ]; then
+  BUILD_NUMBER="1"
+fi
+
+# Update MARKETING_VERSION and CURRENT_PROJECT_VERSION in project.pbxproj
+sed -i '' "s/MARKETING_VERSION = [0-9.]*;/MARKETING_VERSION = $VERSION;/g" Hangar.xcodeproj/project.pbxproj
+sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" Hangar.xcodeproj/project.pbxproj
+
 echo "🔨 Building Hangar locally in Release configuration..."
 # Clean build directory if it exists
 rm -rf build Hangar.zip
@@ -89,3 +108,4 @@ echo "🧹 Cleaning up intermediate build files..."
 rm -rf build
 
 echo "✅ Hangar.zip successfully built and packaged!"
+echo "👉 Remember to commit and push the updated Hangar.zip and Hangar.xcodeproj/project.pbxproj to trigger the release on GitHub!"
