@@ -52,11 +52,12 @@ struct RootView: View {
                     .disabled(controller.selectedApp == nil || controller.selectedApp?.status != .active)
 
                     Button {
-                        controller.load()
+                        controller.syncRegistry(showErrorOnFailure: true)
                     } label: {
                         Label("Reload from registry", systemImage: "arrow.clockwise")
                     }
                     .help("Reload from registry")
+                    .disabled(controller.isSyncingRegistry)
                 }
             }
 

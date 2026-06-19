@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Use the Xcode.app developer path to ensure we have the necessary macOS SDKs
+export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
+
 echo "🔨 Building Hangar locally in Release configuration..."
 # Clean build directory if it exists
 rm -rf build Hangar.zip
@@ -62,8 +65,15 @@ for window in windows {
 }
 SWIFT
 )
-  screencapture -x -l "$WINDOW_ID" screenshot.png
-  echo "✅ screenshot.png updated"
+  if [ -n "$WINDOW_ID" ]; then
+    if screencapture -x -l "$WINDOW_ID" screenshot.png 2>/dev/null; then
+      echo "✅ screenshot.png updated"
+    else
+      echo "⚠️  screencapture failed (possibly due to Screen Recording permissions)"
+    fi
+  else
+    echo "⚠️  Could not find Hangar window ID"
+  fi
 fi
 
 osascript -e 'tell application "Hangar" to quit' 2>/dev/null || true

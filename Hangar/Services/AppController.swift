@@ -20,6 +20,7 @@ final class AppController: ObservableObject {
     @Published var errorMessage: String?
     @Published var githubUser: String?
     @Published var refreshTrigger = UUID()
+    @Published var isSyncingRegistry = false
 
     // Create flow
     let creationRunner = ScriptRunner()
@@ -37,6 +38,7 @@ final class AppController: ObservableObject {
         load()
         selectedAppID = visibleApps.first?.id
         ensureGitHubUser()
+        syncRegistry(showErrorOnFailure: false)
     }
 
     /// Prefer the new `.settings` file, falling back to the legacy
@@ -59,6 +61,19 @@ final class AppController: ObservableObject {
     }
 
     // MARK: - Registry
+
+    func syncRegistry(showErrorOnFailure: Bool = false) {
+        guard let dir = scriptsDirectory else { return }
+        isSyncingRegistry = true
+        runShell("cd apps-registry && git pull", in: dir) { [weak self] code, output in
+            guard let self else { return }
+            self.isSyncingRegistry = false
+            if code != 0 && showErrorOnFailure {
+                self.errorMessage = "Couldn't pull the latest registry updates.\n\n\(output.trimmingCharacters(in: .whitespacesAndNewlines))"
+            }
+            self.load()
+        }
+    }
 
     func load() {
         refreshTrigger = UUID()

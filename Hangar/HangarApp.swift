@@ -26,9 +26,10 @@ struct HangarApp: App {
             }
             CommandGroup(after: .toolbar) {
                 Button("Reload Registry") {
-                    controller.load()
+                    controller.syncRegistry(showErrorOnFailure: true)
                 }
                 .keyboardShortcut("r", modifiers: .command)
+                .disabled(controller.isSyncingRegistry)
             }
         }
     }
