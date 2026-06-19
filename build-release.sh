@@ -78,8 +78,4 @@ cd - > /dev/null
 echo "🧹 Cleaning up intermediate build files..."
 rm -rf build
 
-echo "📎 Staging build artifacts and amending last commit..."
-git add Hangar.zip screenshot.png
-git commit --amend --no-edit --no-verify
-
 echo "✅ Hangar.zip successfully built and packaged!"
