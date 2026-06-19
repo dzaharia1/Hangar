@@ -103,6 +103,41 @@ struct DomainListEditor: View {
     }
 }
 
+/// An editable list of repositories.
+struct RepoListEditor: View {
+    let repos: [RepoEntry]
+    let onEdit: (UUID, String) -> Void
+    let onRemove: (UUID) -> Void
+    let onAdd: () -> Void
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ForEach(repos) { entry in
+                HStack(spacing: 6) {
+                    TextField("github.com/user/my-new-app-idea", text: Binding(
+                        get: { entry.value },
+                        set: { onEdit(entry.id, $0) }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+                    Button {
+                        onRemove(entry.id)
+                    } label: {
+                        Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Remove repository")
+                }
+            }
+            Button(action: onAdd) {
+                Label("Add repository", systemImage: "plus").font(.callout)
+            }
+            .buttonStyle(.borderless)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
 // MARK: - Create tab
 
 struct CreateAppForm: View {
@@ -198,8 +233,13 @@ struct ManualLogForm: View {
                     FormField(label: "Local root", auto: draft.localRootAuto) {
                         monoField("~/Projects/my-new-app-idea", get: { draft.localRoot }, set: { draft.setLocalRoot($0) })
                     }
-                    FormField(label: "GitHub repo", auto: draft.githubAuto) {
-                        monoField("github.com/user/my-new-app-idea", get: { draft.githubRepo }, set: { draft.setGithubRepo($0) })
+                    FormField(label: "GitHub repos", auto: draft.githubAuto) {
+                        RepoListEditor(
+                            repos: draft.githubRepos,
+                            onEdit: { draft.setGithubRepo(id: $0, $1) },
+                            onRemove: { draft.removeGithubRepo(id: $0) },
+                            onAdd: { draft.addGithubRepo() }
+                        )
                     }
                     HStack(alignment: .top, spacing: 16) {
                         FormField(label: "Status") {

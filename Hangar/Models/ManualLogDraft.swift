@@ -1,6 +1,11 @@
 import Foundation
 import Combine
 
+struct RepoEntry: Identifiable, Hashable {
+    let id = UUID()
+    var value: String
+}
+
 /// Backing state for the "Manually log app" tab — used when migrating a legacy
 /// app into the registry without running any provisioning. It exposes every
 /// registry field and uses the same name-driven auto-fill as `CreateDraft`:
@@ -12,7 +17,7 @@ final class ManualLogDraft: ObservableObject {
     @Published private(set) var domains: [DomainEntry] = []
     @Published private(set) var firebaseProjectID = ""
     @Published private(set) var localRoot = ""
-    @Published private(set) var githubRepo = ""
+    @Published private(set) var githubRepos: [RepoEntry] = []
     @Published var status: AppStatus = .active
     @Published var createdAt = ManualLogDraft.nowString()
 
@@ -37,6 +42,11 @@ final class ManualLogDraft: ObservableObject {
             .filter { !$0.isEmpty }
     }
 
+    var githubRepoValues: [String] {
+        githubRepos.map { $0.value.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
     // MARK: - Configuration (injected once the controller has it)
 
     func configure(projectsDir: String?, githubUser: String?) {
@@ -45,9 +55,30 @@ final class ManualLogDraft: ObservableObject {
         recomputeDerived()
     }
 
+    func loadApp(_ app: ManagedApp) {
+        name = app.name
+        appID = app.id
+        domains = app.domains.map { DomainEntry(value: $0) }
+        firebaseProjectID = app.firebaseProjectID
+        localRoot = app.localRoot
+        githubRepos = app.githubRepos.map { RepoEntry(value: $0) }
+        status = app.status
+        createdAt = app.createdAt
+
+        appIDAuto = false
+        domainsAuto = false
+        firebaseAuto = false
+        localRootAuto = false
+        githubAuto = false
+    }
+
     func updateGitHubUser(_ user: String?) {
         githubUser = user
-        if githubAuto { githubRepo = autoGithubRepo() }
+        if githubAuto {
+            githubRepos = appID.isEmpty
+                ? []
+                : [RepoEntry(value: autoGithubRepo())]
+        }
     }
 
     // MARK: - Edits from the UI
@@ -91,9 +122,21 @@ final class ManualLogDraft: ObservableObject {
         localRoot = newValue
     }
 
-    func setGithubRepo(_ newValue: String) {
+    func setGithubRepo(id: UUID, _ newValue: String) {
         githubAuto = false
-        githubRepo = newValue
+        if let index = githubRepos.firstIndex(where: { $0.id == id }) {
+            githubRepos[index].value = newValue
+        }
+    }
+
+    func addGithubRepo() {
+        githubAuto = false
+        githubRepos.append(RepoEntry(value: ""))
+    }
+
+    func removeGithubRepo(id: UUID) {
+        githubAuto = false
+        githubRepos.removeAll { $0.id == id }
     }
 
     // MARK: - Auto-population
@@ -111,7 +154,9 @@ final class ManualLogDraft: ObservableObject {
             localRoot = autoLocalRoot()
         }
         if githubAuto {
-            githubRepo = autoGithubRepo()
+            githubRepos = appID.isEmpty
+                ? []
+                : [RepoEntry(value: autoGithubRepo())]
         }
     }
 

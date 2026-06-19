@@ -2,35 +2,50 @@ import SwiftUI
 
 struct ActionRunsList: View {
     let app: ManagedApp
+    @EnvironmentObject var controller: AppController
 
     @State private var runs: [ActionRun] = []
     @State private var loading = false
     @State private var errorMessage: String?
+    @State private var selectedSlug: String? = nil
+
+    struct RefreshState: Hashable {
+        let appID: String
+        let slug: String?
+        let trigger: UUID
+    }
 
     var body: some View {
         SectionCard(title: "GitHub action runs", systemImage: "play.circle") {
-            VStack(spacing: 8) {
-                HStack {
-                    Spacer()
-                    Button {
-                        Task { await load() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
+            if app.githubRepoInfos.count > 1 {
+                Picker("", selection: $selectedSlug) {
+                    ForEach(app.githubRepoInfos) { info in
+                        Text(displayName(for: info.slug)).tag(info.slug as String?)
                     }
-                    .buttonStyle(.borderless)
-                    .help("Refresh runs")
-                    .disabled(loading || app.githubSlug == nil)
                 }
-
-                content
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: 320)
+                .layoutPriority(-1)
             }
+        } content: {
+            content
         }
-        .task(id: app.id) { await load() }
+        .task(id: app.id) {
+            selectedSlug = app.githubRepoInfos.first?.slug
+        }
+        .task(id: RefreshState(appID: app.id, slug: selectedSlug, trigger: controller.refreshTrigger)) {
+            await load()
+        }
+    }
+
+    private func displayName(for slug: String) -> String {
+        return slug.split(separator: "/").last.map(String.init) ?? slug
     }
 
     @ViewBuilder
     private var content: some View {
-        if app.githubSlug == nil {
+        if selectedSlug == nil {
             placeholder("No GitHub repo to read runs from.")
         } else if loading {
             HStack(spacing: 8) {
@@ -59,9 +74,10 @@ struct ActionRunsList: View {
     }
 
     private func load() async {
-        guard let slug = app.githubSlug else { return }
+        guard let slug = selectedSlug else { return }
         loading = true
         errorMessage = nil
+        runs = []
         do {
             runs = try await GitHubService.fetchRuns(repoSlug: slug)
         } catch {

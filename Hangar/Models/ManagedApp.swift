@@ -21,9 +21,29 @@ struct ManagedApp: Identifiable, Hashable {
     var domains: [String]
     var localRoot: String
     var firebaseProjectID: String
-    var githubRepo: String
+    var githubRepos: [String]
     var status: AppStatus
     var createdAt: String
+
+    init(
+        id: String,
+        name: String,
+        domains: [String],
+        localRoot: String,
+        firebaseProjectID: String,
+        githubRepos: [String],
+        status: AppStatus,
+        createdAt: String
+    ) {
+        self.id = id
+        self.name = name
+        self.domains = domains
+        self.localRoot = localRoot
+        self.firebaseProjectID = firebaseProjectID
+        self.githubRepos = githubRepos
+        self.status = status
+        self.createdAt = createdAt
+    }
 
     init(
         id: String,
@@ -35,14 +55,16 @@ struct ManagedApp: Identifiable, Hashable {
         status: AppStatus,
         createdAt: String
     ) {
-        self.id = id
-        self.name = name
-        self.domains = domains
-        self.localRoot = localRoot
-        self.firebaseProjectID = firebaseProjectID
-        self.githubRepo = githubRepo
-        self.status = status
-        self.createdAt = createdAt
+        self.init(
+            id: id,
+            name: name,
+            domains: domains,
+            localRoot: localRoot,
+            firebaseProjectID: firebaseProjectID,
+            githubRepos: githubRepo.isEmpty ? [] : [githubRepo],
+            status: status,
+            createdAt: createdAt
+        )
     }
 }
 
@@ -75,7 +97,16 @@ extension ManagedApp: Decodable {
         }
 
         firebaseProjectID = (try? c.decode(String.self, forKey: .firebaseProjectID)) ?? ""
-        githubRepo = (try? c.decode(String.self, forKey: .githubRepo)) ?? ""
+        
+        if let array = try? c.decode([String].self, forKey: .githubRepo) {
+            githubRepos = array.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        } else if let single = try? c.decode(String.self, forKey: .githubRepo) {
+            let trimmed = single.trimmingCharacters(in: .whitespacesAndNewlines)
+            githubRepos = trimmed.isEmpty ? [] : [trimmed]
+        } else {
+            githubRepos = []
+        }
+        
         let rawStatus = (try? c.decode(String.self, forKey: .status)) ?? "active"
         status = AppStatus(rawValue: rawStatus) ?? .active
         createdAt = (try? c.decode(String.self, forKey: .createdAt)) ?? ""
@@ -99,6 +130,8 @@ extension ManagedApp {
         return URL(string: "https://console.firebase.google.com/project/\(firebaseProjectID)/overview")
     }
 
+    var githubRepo: String { githubRepos.first ?? "" }
+
     var githubURL: URL? {
         guard let slug = githubSlug else { return nil }
         return URL(string: "https://github.com/\(slug)")
@@ -113,6 +146,25 @@ extension ManagedApp {
         }
         if s.hasSuffix(".git") { s.removeLast(4) }
         return s.isEmpty ? nil : s
+    }
+
+    struct GitHubRepoInfo: Identifiable, Hashable {
+        var id: String { slug }
+        let slug: String
+        let url: URL?
+    }
+
+    var githubRepoInfos: [GitHubRepoInfo] {
+        githubRepos.compactMap { repo in
+            var s = repo.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !s.isEmpty else { return nil }
+            for prefix in ["https://", "http://", "github.com/"] where s.hasPrefix(prefix) {
+                s.removeFirst(prefix.count)
+            }
+            if s.hasSuffix(".git") { s.removeLast(4) }
+            guard !s.isEmpty else { return nil }
+            return GitHubRepoInfo(slug: s, url: URL(string: "https://github.com/\(s)"))
+        }
     }
 
     func url(for domain: String) -> URL? {

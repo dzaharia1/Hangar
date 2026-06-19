@@ -66,21 +66,53 @@ struct StatusBadge: View {
 }
 
 /// A titled card used to group a section of the detail view.
-struct SectionCard<Content: View>: View {
+struct SectionCard<Content: View, HeaderTrailing: View>: View {
     let title: String
     let systemImage: String
+    var headerTrailing: () -> HeaderTrailing
     @ViewBuilder var content: Content
+
+    init(
+        title: String,
+        systemImage: String,
+        @ViewBuilder headerTrailing: @escaping () -> HeaderTrailing,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.headerTrailing = headerTrailing
+        self.content = content()
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+            HStack {
+                Label(title, systemImage: systemImage)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                headerTrailing()
+            }
             content
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassCard(cornerRadius: 14)
+    }
+}
+
+extension SectionCard where HeaderTrailing == EmptyView {
+    init(
+        title: String,
+        systemImage: String,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(
+            title: title,
+            systemImage: systemImage,
+            headerTrailing: { EmptyView() },
+            content: content
+        )
     }
 }
 

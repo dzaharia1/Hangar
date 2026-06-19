@@ -16,8 +16,10 @@ final class AppController: ObservableObject {
 
     @Published var showCreateSheet = false
     @Published var showSettingsSheet = false
+    @Published var showEditSheet = false
     @Published var errorMessage: String?
     @Published var githubUser: String?
+    @Published var refreshTrigger = UUID()
 
     // Create flow
     let creationRunner = ScriptRunner()
@@ -59,6 +61,7 @@ final class AppController: ObservableObject {
     // MARK: - Registry
 
     func load() {
+        refreshTrigger = UUID()
         guard let dir = scriptsDirectory else {
             apps = []
             loadError = "Couldn't find your setup scripts. Choose the folder that contains setup-new-app.sh."
@@ -207,7 +210,7 @@ final class AppController: ObservableObject {
         let domainValues = draft.domainValues
         let localRoot = draft.localRoot
         let firebaseID = draft.firebaseProjectID
-        let githubRepo = draft.githubRepo
+        let githubRepoValues = draft.githubRepoValues
         let status = draft.status
         let createdAt = draft.createdAt
 
@@ -218,7 +221,7 @@ final class AppController: ObservableObject {
             domains: domainValues,
             localRoot: localRoot,
             firebaseProjectID: firebaseID,
-            githubRepo: githubRepo,
+            githubRepos: githubRepoValues,
             status: status,
             createdAt: createdAt
         )
@@ -231,6 +234,23 @@ final class AppController: ObservableObject {
         let domainsJSON = (try? JSONSerialization.data(withJSONObject: domainValues))
             .map { String(decoding: $0, as: UTF8.self) } ?? "[]"
 
+        let githubRepoJSON: String
+        if githubRepoValues.count > 1 {
+            githubRepoJSON = (try? JSONSerialization.data(withJSONObject: githubRepoValues))
+                .map { String(decoding: $0, as: UTF8.self) } ?? "[]"
+        } else if let single = githubRepoValues.first {
+            githubRepoJSON = (try? JSONSerialization.data(withJSONObject: [single]))
+                .map { data -> String in
+                    let str = String(decoding: data, as: UTF8.self)
+                    if str.hasPrefix("[") && str.hasSuffix("]") {
+                        return String(str.dropFirst().dropLast())
+                    }
+                    return str
+                } ?? "\"\""
+        } else {
+            githubRepoJSON = "\"\""
+        }
+
         let entryExpr = "{id:$id,name:$name,domain:$domain,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date}"
         let command = """
         cd apps-registry && \
@@ -242,7 +262,7 @@ final class AppController: ObservableObject {
           --argjson domains \(Shell.quote(domainsJSON)) \
           --arg local_root \(Shell.quote(localRoot)) \
           --arg f_pid \(Shell.quote(firebaseID)) \
-          --arg gh_repo \(Shell.quote(githubRepo)) \
+          --argjson gh_repo \(Shell.quote(githubRepoJSON)) \
           --arg status \(Shell.quote(status.rawValue)) \
           --arg date \(Shell.quote(createdAt)) \
           '\(entryExpr)') && \
@@ -259,6 +279,87 @@ final class AppController: ObservableObject {
             self.load()
             if self.apps.contains(where: { $0.id == id }) {
                 self.selectedTab = status
+                self.selectedAppID = id
+            }
+        }
+    }
+
+    func updateApp(oldID: String, from draft: ManualLogDraft) {
+        guard let dir = scriptsDirectory else { return }
+
+        let id = draft.appID
+        let name = draft.name.trimmingCharacters(in: .whitespaces)
+        let domainValues = draft.domainValues
+        let localRoot = draft.localRoot
+        let firebaseID = draft.firebaseProjectID
+        let githubRepoValues = draft.githubRepoValues
+        let status = draft.status
+        let createdAt = draft.createdAt
+
+        // Optimistic update
+        let updated = ManagedApp(
+            id: id,
+            name: name.isEmpty ? id : name,
+            domains: domainValues,
+            localRoot: localRoot,
+            firebaseProjectID: firebaseID,
+            githubRepos: githubRepoValues,
+            status: status,
+            createdAt: createdAt
+        )
+        if let index = apps.firstIndex(where: { $0.id == oldID }) {
+            apps[index] = updated
+        }
+        selectedAppID = id
+
+        let domainStr = domainValues.joined(separator: ", ")
+        let domainsJSON = (try? JSONSerialization.data(withJSONObject: domainValues))
+            .map { String(decoding: $0, as: UTF8.self) } ?? "[]"
+
+        let githubRepoJSON: String
+        if githubRepoValues.count > 1 {
+            githubRepoJSON = (try? JSONSerialization.data(withJSONObject: githubRepoValues))
+                .map { String(decoding: $0, as: UTF8.self) } ?? "[]"
+        } else if let single = githubRepoValues.first {
+            githubRepoJSON = (try? JSONSerialization.data(withJSONObject: [single]))
+                .map { data -> String in
+                    let str = String(decoding: data, as: UTF8.self)
+                    if str.hasPrefix("[") && str.hasSuffix("]") {
+                        return String(str.dropFirst().dropLast())
+                    }
+                    return str
+                } ?? "\"\""
+        } else {
+            githubRepoJSON = "\"\""
+        }
+
+        let entryExpr = "{id:$id,name:$name,domain:$domain,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date}"
+        let command = """
+        cd apps-registry && \
+        ([ -s apps-registry.json ] || echo '[]' > apps-registry.json) && \
+        NEW_ENTRY=$(jq -n \
+          --arg id \(Shell.quote(id)) \
+          --arg name \(Shell.quote(name)) \
+          --arg domain \(Shell.quote(domainStr)) \
+          --argjson domains \(Shell.quote(domainsJSON)) \
+          --arg local_root \(Shell.quote(localRoot)) \
+          --arg f_pid \(Shell.quote(firebaseID)) \
+          --argjson gh_repo \(Shell.quote(githubRepoJSON)) \
+          --arg status \(Shell.quote(status.rawValue)) \
+          --arg date \(Shell.quote(createdAt)) \
+          '\(entryExpr)') && \
+        jq --arg old_id \(Shell.quote(oldID)) --argjson new_entry "$NEW_ENTRY" 'map(if .id == $old_id then $new_entry else . end)' apps-registry.json > apps-registry.tmp.json && \
+        mv apps-registry.tmp.json apps-registry.json && \
+        { git add apps-registry.json && git commit -m \(Shell.quote("Update app: \(id)")) && git push; } >/dev/null 2>&1; true
+        """
+
+        runShell(command, in: dir) { [weak self] code, output in
+            guard let self else { return }
+            if code != 0 {
+                self.errorMessage = "Couldn't update the registry entry.\n\n\(output.trimmingCharacters(in: .whitespacesAndNewlines))"
+            }
+            self.load()
+            if self.apps.contains(where: { $0.id == id }) {
                 self.selectedAppID = id
             }
         }

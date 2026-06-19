@@ -3,7 +3,6 @@ import SwiftUI
 struct AppDetailView: View {
     let app: ManagedApp
     @EnvironmentObject var controller: AppController
-    @State private var confirmingArchive = false
     @State private var confirmingRestore = false
 
     var body: some View {
@@ -19,16 +18,6 @@ struct AppDetailView: View {
             .padding(24)
             .frame(maxWidth: 820, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
-        }
-        .confirmationDialog(
-            "Archive \(app.name)?",
-            isPresented: $confirmingArchive,
-            titleVisibility: .visible
-        ) {
-            Button("Archive", role: .destructive) { controller.archive(app) }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This deletes the Firebase project, the local folder, and the Cloudflare DNS records. The GitHub repo is kept, so the app can be restored later.")
         }
         .confirmationDialog(
             "Restore \(app.name)?",
@@ -72,12 +61,7 @@ struct AppDetailView: View {
     private var actionButton: some View {
         switch app.status {
         case .active:
-            Button(role: .destructive) {
-                confirmingArchive = true
-            } label: {
-                Label("Archive", systemImage: "archivebox")
-            }
-            .buttonStyle(.bordered)
+            EmptyView()
         case .removed:
             Button {
                 confirmingRestore = true
@@ -150,12 +134,17 @@ struct AppDetailView: View {
     @ViewBuilder
     private var githubSection: some View {
         SectionCard(title: "GitHub", systemImage: "chevron.left.forwardslash.chevron.right") {
-            if let slug = app.githubSlug {
-                linkRow(label: slug, url: app.githubURL, icon: "chevron.left.forwardslash.chevron.right")
-            } else {
+            let infos = app.githubRepoInfos
+            if infos.isEmpty {
                 Text("No GitHub repo recorded.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(infos) { info in
+                        linkRow(label: info.slug, url: info.url, icon: "chevron.left.forwardslash.chevron.right")
+                    }
+                }
             }
         }
     }

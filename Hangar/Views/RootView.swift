@@ -4,6 +4,9 @@ struct RootView: View {
     @EnvironmentObject var controller: AppController
     @AppStorage("appTheme") private var appTheme: AppTheme = .system
 
+    @State private var showingArchiveConfirm = false
+    @State private var confirmAppName = ""
+
     var body: some View {
         NavigationSplitView {
             SidebarView()
@@ -27,38 +30,75 @@ struct RootView: View {
                 .frame(maxHeight: .infinity)
             }
 
-            ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 4) {
+            ToolbarItem(placement: .principal) {
+                ControlGroup {
+                    Button {
+                        controller.showEditSheet = true
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    .help("Edit app")
+                    .disabled(controller.selectedApp == nil)
+
+                    Button(role: .destructive) {
+                        confirmAppName = ""
+                        showingArchiveConfirm = true
+                    } label: {
+                        Label("Archive", systemImage: "archivebox")
+                    }
+                    .help("Archive app")
+                    .disabled(controller.selectedApp == nil || controller.selectedApp?.status != .active)
+
                     Button {
                         controller.load()
                     } label: {
-                        Image(systemName: "arrow.clockwise")
+                        Label("Reload from registry", systemImage: "arrow.clockwise")
                     }
                     .help("Reload from registry")
-
-                    Rectangle()
-                        .frame(width: 1, height: 16)
-                        .foregroundColor(Color(nsColor: .separatorColor))
-
-                    Button {
-                        controller.showSettingsSheet = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .help("Settings")
-                    .disabled(controller.scriptsDirectory == nil)
                 }
-                .frame(maxHeight: .infinity)
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    controller.showSettingsSheet = true
+                } label: {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .help("Settings")
+                .disabled(controller.scriptsDirectory == nil)
             }
         }
         .sheet(isPresented: $controller.showCreateSheet) {
             CreateAppSheet()
+        }
+        .sheet(isPresented: $controller.showEditSheet) {
+            if let app = controller.selectedApp {
+                EditAppSheet(app: app)
+            }
         }
         .sheet(isPresented: $controller.showSettingsSheet) {
             SettingsSheet(settings: controller.currentSettings)
         }
         .sheet(item: $controller.runningAction) { action in
             ActionProgressSheet(action: action, runner: controller.actionRunner)
+        }
+        .alert(
+            "Archive \(controller.selectedApp?.name ?? "")?",
+            isPresented: $showingArchiveConfirm
+        ) {
+            TextField("App name", text: $confirmAppName)
+            Button("Archive", role: .destructive) {
+                if let app = controller.selectedApp, confirmAppName == app.name {
+                    controller.archive(app)
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                confirmAppName = ""
+            }
+        } message: {
+            if let app = controller.selectedApp {
+                Text("This deletes the Firebase project, the local folder, and the Cloudflare DNS records. The GitHub repo is kept. To confirm, please type the application name \"\(app.name)\":")
+            }
         }
         .alert(
             "Something went wrong",
