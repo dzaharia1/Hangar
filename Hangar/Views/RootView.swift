@@ -33,7 +33,6 @@ struct RootView: View {
                         controller.load()
                     } label: {
                         Image(systemName: "arrow.clockwise")
-                        Text("Refresh")
                     }
                     .help("Reload from registry")
 
@@ -45,7 +44,6 @@ struct RootView: View {
                         controller.showSettingsSheet = true
                     } label: {
                         Image(systemName: "gearshape")
-                        Text("Settings")
                     }
                     .help("Settings")
                     .disabled(controller.scriptsDirectory == nil)
