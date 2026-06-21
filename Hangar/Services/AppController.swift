@@ -179,7 +179,7 @@ final class AppController: ObservableObject {
         let name = draft.name.trimmingCharacters(in: .whitespaces)
         let domainValues = draft.domainValues
         let firebaseID = draft.firebaseProjectID
-        let localRoot = deploySecrets.localProjectsDir.map { "\($0)/\(id)" } ?? id
+        let localRoot = deploySecrets.localProjectsDir.map { "\($0)/\(name)" } ?? name
 
         creatingApp = ManagedApp(
             id: id,

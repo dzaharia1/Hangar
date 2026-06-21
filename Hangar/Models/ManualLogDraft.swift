@@ -161,9 +161,9 @@ final class ManualLogDraft: ObservableObject {
     }
 
     private func autoLocalRoot() -> String {
-        guard !appID.isEmpty else { return "" }
-        if let base = projectsDir { return "\(base)/\(appID)" }
-        return appID
+        guard !name.isEmpty else { return "" }
+        if let base = projectsDir { return "\(base)/\(name)" }
+        return name
     }
 
     private func autoGithubRepo() -> String {
