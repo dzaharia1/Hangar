@@ -19,9 +19,26 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
     line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
     [[ "$line" =~ ^# ]] && continue
     [[ -z "$line" ]] && continue
-    # Strip optional "export " prefix and export
+    # Strip optional "export " prefix
     line=${line#export }
-    export "$line"
+    
+    # Split the line into key and value at the first '='
+    if [[ "$line" =~ ^([^=]+)=(.*)$ ]]; then
+      key="${BASH_REMATCH[1]}"
+      val="${BASH_REMATCH[2]}"
+      
+      # Strip leading/trailing whitespaces from key and val
+      key=$(echo "$key" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+      val=$(echo "$val" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+      
+      # Strip leading and trailing double/single quotes from val
+      val="${val#\"}"
+      val="${val%\"}"
+      val="${val#\'}"
+      val="${val%\'}"
+      
+      export "$key=$val"
+    fi
   done < "$SCRIPT_DIR/.env"
 fi
 
@@ -58,10 +75,36 @@ xcodebuild -project Hangar.xcodeproj \
            -configuration Release \
            -derivedDataPath build \
            CODE_SIGN_IDENTITY="Developer ID Application" \
-           DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" > /dev/null
+           DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" > xcodebuild.log 2>&1 || {
+             echo "❌ xcodebuild failed. Compilation log:"
+             cat xcodebuild.log
+             rm -f xcodebuild.log
+             exit 1
+           }
+rm -f xcodebuild.log
+
+APP_PATH="build/Build/Products/Release/Hangar.app"
+
+# Create a temporary entitlements file to ensure get-task-allow is absent (which would fail notarization)
+# and Hardened Runtime exceptions (library validation & unsigned executable memory) are enabled.
+cat << 'EOF' > temp.entitlements
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+</dict>
+</plist>
+EOF
+
+echo "✍️ Signing Hangar.app with secure timestamp..."
+codesign --force --options runtime --timestamp --entitlements temp.entitlements --sign "Developer ID Application" "$APP_PATH"
+rm -f temp.entitlements
 
 echo "📸 Capturing screenshot..."
-APP_PATH="build/Build/Products/Release/Hangar.app"
 
 # Allow unsigned build to launch
 xattr -cr "$APP_PATH" 2>/dev/null || true
