@@ -35,7 +35,16 @@ struct ActionRunsList: View {
             selectedSlug = app.githubRepoInfos.first?.slug
         }
         .task(id: RefreshState(appID: app.id, slug: selectedSlug, trigger: controller.refreshTrigger)) {
+            guard selectedSlug != nil else { return }
             await load()
+            while true {
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch {
+                    break
+                }
+                await load(silent: true)
+            }
         }
     }
 
@@ -73,17 +82,25 @@ struct ActionRunsList: View {
             .padding(.vertical, 4)
     }
 
-    private func load() async {
+    private func load(silent: Bool = false) async {
         guard let slug = selectedSlug else { return }
-        loading = true
-        errorMessage = nil
-        runs = []
-        do {
-            runs = try await GitHubService.fetchRuns(repoSlug: slug)
-        } catch {
-            errorMessage = error.localizedDescription
+        if !silent {
+            loading = true
+            errorMessage = nil
+            runs = []
         }
-        loading = false
+        do {
+            let fetchedRuns = try await GitHubService.fetchRuns(repoSlug: slug)
+            runs = fetchedRuns
+            errorMessage = nil
+        } catch {
+            if !silent || runs.isEmpty {
+                errorMessage = error.localizedDescription
+            }
+        }
+        if !silent {
+            loading = false
+        }
     }
 }
 
