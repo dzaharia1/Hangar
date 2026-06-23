@@ -167,7 +167,7 @@ final class UpdateManager: ObservableObject {
             try process.run()
             
             DispatchQueue.main.async {
-                NSApplication.shared.terminate(nil)
+                exit(0)
             }
         } catch {
             print("Installation failed: \(error)")
