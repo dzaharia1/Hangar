@@ -73,12 +73,17 @@ enum Theme {
             // Z - Zircon Blue
             [Color(red: 0.25, green: 0.55, blue: 0.75), Color(red: 0.55, green: 0.80, blue: 0.90)],
         ]
-        let firstChar = seed.first?.uppercased() ?? ""
+        let clean = seed.trimmingCharacters(in: .whitespacesAndNewlines)
+        let firstChar = clean.first?.uppercased() ?? ""
+        let secondChar = clean.dropFirst().first?.uppercased() ?? ""
         let index: Int
-        if let ascii = firstChar.unicodeScalars.first?.value, ascii >= 65 && ascii <= 90 {
-            index = Int(ascii - 65)
+        if let ascii1 = firstChar.unicodeScalars.first?.value, ascii1 >= 65 && ascii1 <= 90,
+           let ascii2 = secondChar.unicodeScalars.first?.value, ascii2 >= 65 && ascii2 <= 90 {
+            index = Int(ascii1 + ascii2) % palettes.count
+        } else if let ascii1 = firstChar.unicodeScalars.first?.value, ascii1 >= 65 && ascii1 <= 90 {
+            index = Int(ascii1 - 65) % palettes.count
         } else {
-            index = abs(stableHash(seed)) % palettes.count
+            index = abs(stableHash(clean)) % palettes.count
         }
         return LinearGradient(colors: palettes[index], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
@@ -98,5 +103,17 @@ extension View {
         #else
         self.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         #endif
+    }
+
+    /// A card with the default app background color and shadow/elevation.
+    func elevatedCard(cornerRadius: CGFloat = 16) -> some View {
+        self
+            .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 3)
+            .shadow(color: .black.opacity(0.04), radius: 1, x: 0, y: 1)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+            )
     }
 }

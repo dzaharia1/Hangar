@@ -66,6 +66,6 @@ struct CreatingView: View {
             .buttonStyle(.bordered)
         }
         .padding(14)
-        .glassCard(cornerRadius: 14)
+        .elevatedCard(cornerRadius: 14)
     }
 }

@@ -9,15 +9,13 @@ struct AppGlyph: View {
     var size: CGFloat = 28
 
     private var initials: String {
-        let words = name.split(separator: " ")
-        let letters = words.prefix(2).compactMap { $0.first }
-        let result = String(letters).uppercased()
-        return result.isEmpty ? "?" : result
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return clean.isEmpty ? "?" : String(clean.prefix(2)).uppercased()
     }
 
     var body: some View {
         RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-            .fill(Theme.gradient(for: id))
+            .fill(Theme.gradient(for: name))
             .frame(width: size, height: size)
             .overlay(
                 Text(initials)
@@ -97,7 +95,7 @@ struct SectionCard<Content: View, HeaderTrailing: View>: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassCard(cornerRadius: 14)
+        .elevatedCard(cornerRadius: 14)
     }
 }
 
