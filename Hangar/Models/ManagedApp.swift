@@ -152,6 +152,14 @@ extension ManagedApp {
         var id: String { slug }
         let slug: String
         let url: URL?
+
+        var sshRemote: String {
+            "git@github.com:\(slug).git"
+        }
+
+        var httpsRemote: String {
+            "https://github.com/\(slug).git"
+        }
     }
 
     var githubRepoInfos: [GitHubRepoInfo] {

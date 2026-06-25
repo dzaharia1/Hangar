@@ -4,6 +4,7 @@ struct AppDetailView: View {
     let app: ManagedApp
     @EnvironmentObject var controller: AppController
     @State private var confirmingRestore = false
+    @State private var useHTTPS = false
 
     var body: some View {
         ScrollView {
@@ -142,8 +143,36 @@ struct AppDetailView: View {
             } else {
                 VStack(spacing: 8) {
                     ForEach(infos) { info in
-                        linkRow(label: info.slug, url: info.url, icon: "chevron.left.forwardslash.chevron.right")
+                        VStack(alignment: .leading, spacing: 6) {
+                            linkRow(label: info.slug, url: info.url, icon: "chevron.left.forwardslash.chevron.right")
+                            remoteRow(value: useHTTPS ? info.httpsRemote : info.sshRemote)
+                        }
                     }
+                }
+            }
+        }
+    }
+
+    private func remoteRow(value: String) -> some View {
+        DetailRow(icon: "terminal", value: value, monospaced: true) {
+            HStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    Text("SSH")
+                        .font(.caption2)
+                        .foregroundStyle(!useHTTPS ? .secondary : .tertiary)
+                    
+                    Toggle("", isOn: $useHTTPS)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .controlSize(.mini)
+                    
+                    Text("HTTPS")
+                        .font(.caption2)
+                        .foregroundStyle(useHTTPS ? .secondary : .tertiary)
+                }
+                
+                IconActionButton(systemImage: "doc.on.doc", help: "Copy remote URL") {
+                    Clipboard.copy(value)
                 }
             }
         }
