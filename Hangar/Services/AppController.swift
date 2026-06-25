@@ -262,7 +262,6 @@ final class AppController: ObservableObject {
         selectedTab = status
         selectedAppID = id
 
-        let domainStr = domainValues.joined(separator: ", ")
         let domainsJSON = (try? JSONSerialization.data(withJSONObject: domainValues))
             .map { String(decoding: $0, as: UTF8.self) } ?? "[]"
 
@@ -283,14 +282,13 @@ final class AppController: ObservableObject {
             githubRepoJSON = "\"\""
         }
 
-        let entryExpr = "{id:$id,name:$name,domain:$domain,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date,pinned:$pinned}"
+        let entryExpr = "{id:$id,name:$name,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date,pinned:$pinned}"
         let command = """
         cd apps-registry && \
         ([ -s apps-registry.json ] || echo '[]' > apps-registry.json) && \
         NEW_ENTRY=$(jq -n \
           --arg id \(Shell.quote(id)) \
           --arg name \(Shell.quote(name)) \
-          --arg domain \(Shell.quote(domainStr)) \
           --argjson domains \(Shell.quote(domainsJSON)) \
           --arg local_root \(Shell.quote(localRoot)) \
           --arg f_pid \(Shell.quote(firebaseID)) \
@@ -347,7 +345,6 @@ final class AppController: ObservableObject {
         }
         selectedAppID = id
 
-        let domainStr = domainValues.joined(separator: ", ")
         let domainsJSON = (try? JSONSerialization.data(withJSONObject: domainValues))
             .map { String(decoding: $0, as: UTF8.self) } ?? "[]"
 
@@ -368,14 +365,13 @@ final class AppController: ObservableObject {
             githubRepoJSON = "\"\""
         }
 
-        let entryExpr = "{id:$id,name:$name,domain:$domain,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date,pinned:$pinned}"
+        let entryExpr = "{id:$id,name:$name,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date,pinned:$pinned}"
         let command = """
         cd apps-registry && \
         ([ -s apps-registry.json ] || echo '[]' > apps-registry.json) && \
         NEW_ENTRY=$(jq -n \
           --arg id \(Shell.quote(id)) \
           --arg name \(Shell.quote(name)) \
-          --arg domain \(Shell.quote(domainStr)) \
           --argjson domains \(Shell.quote(domainsJSON)) \
           --arg local_root \(Shell.quote(localRoot)) \
           --arg f_pid \(Shell.quote(firebaseID)) \

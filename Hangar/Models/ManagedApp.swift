@@ -77,7 +77,7 @@ struct ManagedApp: Identifiable, Hashable {
 
 extension ManagedApp: Decodable {
     enum CodingKeys: String, CodingKey {
-        case id, name, domain, domains
+        case id, name, domains
         case localRoot = "local_root"
         case firebaseProjectID = "firebase_project_id"
         case githubRepo = "github_repo"
@@ -91,16 +91,7 @@ extension ManagedApp: Decodable {
         id = try c.decode(String.self, forKey: .id)
         name = (try? c.decode(String.self, forKey: .name)) ?? id
 
-        if let array = try? c.decode([String].self, forKey: .domains), !array.isEmpty {
-            domains = array.map(ManagedApp.cleanDomain).filter { !$0.isEmpty }
-        } else if let legacy = try? c.decode(String.self, forKey: .domain) {
-            domains = legacy
-                .split(separator: ",")
-                .map { ManagedApp.cleanDomain(String($0)) }
-                .filter { !$0.isEmpty }
-        } else {
-            domains = []
-        }
+        domains = (try? c.decode([String].self, forKey: .domains))?.map(ManagedApp.cleanDomain).filter { !$0.isEmpty } ?? []
 
         firebaseProjectID = (try? c.decode(String.self, forKey: .firebaseProjectID)) ?? ""
         
