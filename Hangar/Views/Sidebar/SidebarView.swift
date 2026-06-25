@@ -85,6 +85,8 @@ struct SidebarView: View {
 
 struct AppRow: View {
     let app: ManagedApp
+    @EnvironmentObject var controller: AppController
+    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -100,7 +102,23 @@ struct AppRow: View {
                     .truncationMode(.middle)
             }
             Spacer(minLength: 0)
+            
+            if app.pinned || isHovering {
+                Button {
+                    controller.togglePin(for: app)
+                } label: {
+                    Image(systemName: app.pinned ? "pin.fill" : "pin")
+                        .font(.body)
+                        .foregroundStyle(app.pinned ? .primary : .secondary)
+                }
+                .buttonStyle(.borderless)
+                .help(app.pinned ? "Unpin project" : "Pin project")
+            }
         }
         .padding(.vertical, 3)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovering = hovering
+        }
     }
 }

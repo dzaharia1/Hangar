@@ -24,6 +24,7 @@ struct ManagedApp: Identifiable, Hashable {
     var githubRepos: [String]
     var status: AppStatus
     var createdAt: String
+    var pinned: Bool
 
     init(
         id: String,
@@ -33,7 +34,8 @@ struct ManagedApp: Identifiable, Hashable {
         firebaseProjectID: String,
         githubRepos: [String],
         status: AppStatus,
-        createdAt: String
+        createdAt: String,
+        pinned: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -43,6 +45,7 @@ struct ManagedApp: Identifiable, Hashable {
         self.githubRepos = githubRepos
         self.status = status
         self.createdAt = createdAt
+        self.pinned = pinned
     }
 
     init(
@@ -53,7 +56,8 @@ struct ManagedApp: Identifiable, Hashable {
         firebaseProjectID: String,
         githubRepo: String,
         status: AppStatus,
-        createdAt: String
+        createdAt: String,
+        pinned: Bool = false
     ) {
         self.init(
             id: id,
@@ -63,7 +67,8 @@ struct ManagedApp: Identifiable, Hashable {
             firebaseProjectID: firebaseProjectID,
             githubRepos: githubRepo.isEmpty ? [] : [githubRepo],
             status: status,
-            createdAt: createdAt
+            createdAt: createdAt,
+            pinned: pinned
         )
     }
 }
@@ -78,6 +83,7 @@ extension ManagedApp: Decodable {
         case githubRepo = "github_repo"
         case status
         case createdAt = "created_at"
+        case pinned
     }
 
     init(from decoder: Decoder) throws {
@@ -112,6 +118,7 @@ extension ManagedApp: Decodable {
         createdAt = (try? c.decode(String.self, forKey: .createdAt)) ?? ""
         // Filled in by AppController using LOCAL_PROJECTS_DIR when absent.
         localRoot = (try? c.decode(String.self, forKey: .localRoot)) ?? ""
+        pinned = (try? c.decode(Bool.self, forKey: .pinned)) ?? false
     }
 }
 

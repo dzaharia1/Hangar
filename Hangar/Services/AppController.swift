@@ -149,7 +149,12 @@ final class AppController: ObservableObject {
     var visibleApps: [ManagedApp] {
         apps
             .filter { $0.status == selectedTab }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            .sorted {
+                if $0.pinned != $1.pinned {
+                    return $0.pinned && !$1.pinned
+                }
+                return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
     }
 
     var selectedApp: ManagedApp? {
@@ -278,7 +283,7 @@ final class AppController: ObservableObject {
             githubRepoJSON = "\"\""
         }
 
-        let entryExpr = "{id:$id,name:$name,domain:$domain,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date}"
+        let entryExpr = "{id:$id,name:$name,domain:$domain,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date,pinned:$pinned}"
         let command = """
         cd apps-registry && \
         ([ -s apps-registry.json ] || echo '[]' > apps-registry.json) && \
@@ -292,6 +297,7 @@ final class AppController: ObservableObject {
           --argjson gh_repo \(Shell.quote(githubRepoJSON)) \
           --arg status \(Shell.quote(status.rawValue)) \
           --arg date \(Shell.quote(createdAt)) \
+          --argjson pinned false \
           '\(entryExpr)') && \
         jq ". + [$NEW_ENTRY]" apps-registry.json > apps-registry.tmp.json && \
         mv apps-registry.tmp.json apps-registry.json && \
@@ -324,6 +330,7 @@ final class AppController: ObservableObject {
         let createdAt = draft.createdAt
 
         // Optimistic update
+        let oldPinned = apps.first(where: { $0.id == oldID })?.pinned ?? false
         let updated = ManagedApp(
             id: id,
             name: name.isEmpty ? id : name,
@@ -332,7 +339,8 @@ final class AppController: ObservableObject {
             firebaseProjectID: firebaseID,
             githubRepos: githubRepoValues,
             status: status,
-            createdAt: createdAt
+            createdAt: createdAt,
+            pinned: oldPinned
         )
         if let index = apps.firstIndex(where: { $0.id == oldID }) {
             apps[index] = updated
@@ -360,7 +368,7 @@ final class AppController: ObservableObject {
             githubRepoJSON = "\"\""
         }
 
-        let entryExpr = "{id:$id,name:$name,domain:$domain,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date}"
+        let entryExpr = "{id:$id,name:$name,domain:$domain,domains:$domains,local_root:$local_root,firebase_project_id:$f_pid,github_repo:$gh_repo,status:$status,created_at:$date,pinned:$pinned}"
         let command = """
         cd apps-registry && \
         ([ -s apps-registry.json ] || echo '[]' > apps-registry.json) && \
@@ -374,6 +382,7 @@ final class AppController: ObservableObject {
           --argjson gh_repo \(Shell.quote(githubRepoJSON)) \
           --arg status \(Shell.quote(status.rawValue)) \
           --arg date \(Shell.quote(createdAt)) \
+          --argjson pinned \(oldPinned) \
           '\(entryExpr)') && \
         jq --arg old_id \(Shell.quote(oldID)) --argjson new_entry "$NEW_ENTRY" 'map(if .id == $old_id then $new_entry else . end)' apps-registry.json > apps-registry.tmp.json && \
         mv apps-registry.tmp.json apps-registry.json && \
@@ -418,6 +427,35 @@ final class AppController: ObservableObject {
             let output = String(decoding: data, as: UTF8.self)
             let status = process.terminationStatus
             DispatchQueue.main.async { completion(status, output) }
+        }
+    }
+
+    // MARK: - Pinning
+
+    func togglePin(for app: ManagedApp) {
+        guard let dir = scriptsDirectory else { return }
+        let id = app.id
+        let newPinned = !app.pinned
+
+        // Optimistically update
+        if let index = apps.firstIndex(where: { $0.id == id }) {
+            apps[index].pinned = newPinned
+        }
+
+        let command = """
+        cd apps-registry && \
+        ([ -s apps-registry.json ] || echo '[]' > apps-registry.json) && \
+        jq --arg id \(Shell.quote(id)) --argjson pinned \(newPinned) 'map(if .id == $id then .pinned = $pinned else . end)' apps-registry.json > apps-registry.tmp.json && \
+        mv apps-registry.tmp.json apps-registry.json && \
+        { git add apps-registry.json && git commit -m \(Shell.quote("Toggle pin: \(id)")) && git push; } >/dev/null 2>&1; true
+        """
+
+        runShell(command, in: dir) { [weak self] code, output in
+            guard let self else { return }
+            if code != 0 {
+                self.errorMessage = "Couldn't update the registry entry pin state.\n\n\(output.trimmingCharacters(in: .whitespacesAndNewlines))"
+            }
+            self.load()
         }
     }
 
