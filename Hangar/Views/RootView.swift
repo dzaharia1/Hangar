@@ -19,6 +19,7 @@ struct RootView: View {
         .toolbar(removing: .sidebarToggle)
         .frame(minWidth: 940, minHeight: 620)
         .preferredColorScheme(appTheme.colorScheme)
+        .persistsWindowFrameEfficiently()
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button {
