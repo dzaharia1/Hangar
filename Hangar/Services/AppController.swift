@@ -327,6 +327,11 @@ final class AppController: ObservableObject {
         let status = draft.status
         let createdAt = draft.createdAt
 
+        // Domains added in this edit get real provisioning (Firebase Hosting +
+        // Cloudflare CNAME) after the registry entry is saved.
+        let previousDomains = apps.first(where: { $0.id == oldID })?.domains ?? []
+        let addedDomains = domainValues.filter { !previousDomains.contains($0) }
+
         // Optimistic update
         let oldPinned = apps.first(where: { $0.id == oldID })?.pinned ?? false
         let updated = ManagedApp(
@@ -394,7 +399,18 @@ final class AppController: ObservableObject {
             if self.apps.contains(where: { $0.id == id }) {
                 self.selectedAppID = id
             }
+            if code == 0, !addedDomains.isEmpty, status == .active, !firebaseID.isEmpty {
+                self.addDomains(addedDomains, toApp: id, name: name.isEmpty ? id : name)
+            }
         }
+    }
+
+    /// Provision extra domains for an existing active app — Firebase Hosting
+    /// registration plus the Cloudflare CNAME record. The registry entry already
+    /// lists them, so the script's own registry append is a no-op here.
+    func addDomains(_ domains: [String], toApp appID: String, name: String) {
+        runAction(.addDomain(appID: appID, name: name, domains: domains),
+                  command: "./add-domain.sh -id \(Shell.quote(appID)) -domain \(Shell.quote(domains.joined(separator: ",")))")
     }
 
     /// Fire-and-collect a shell command; result delivered on the main actor.
@@ -490,6 +506,9 @@ final class AppController: ObservableObject {
                 selectedTab = .removed
                 selectedAppID = appID
             case .restore(let appID, _):
+                selectedTab = .active
+                selectedAppID = appID
+            case .addDomain(let appID, _, _):
                 selectedTab = .active
                 selectedAppID = appID
             }

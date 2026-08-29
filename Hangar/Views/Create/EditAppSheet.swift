@@ -69,6 +69,10 @@ struct EditAppSheet: View {
             Divider()
 
             HStack {
+                if willProvisionDomains {
+                    Text("New domains get DNS + Firebase Hosting on save.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Save") {
@@ -87,6 +91,13 @@ struct EditAppSheet: View {
         .onAppear {
             draft.loadApp(app)
         }
+    }
+
+    /// True when the draft holds domains the app doesn't have yet — those get
+    /// provisioned (Cloudflare CNAME + Firebase Hosting) after saving.
+    private var willProvisionDomains: Bool {
+        guard draft.status == .active, !draft.firebaseProjectID.isEmpty else { return false }
+        return draft.domainValues.contains { !app.domains.contains($0) }
     }
 }
 
