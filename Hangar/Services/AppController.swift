@@ -327,10 +327,11 @@ final class AppController: ObservableObject {
         let status = draft.status
         let createdAt = draft.createdAt
 
-        // Domains added in this edit get real provisioning (Firebase Hosting +
-        // Cloudflare CNAME) after the registry entry is saved.
+        // Domain changes in this edit get real provisioning (Firebase Hosting +
+        // Cloudflare CNAME, in both directions) after the registry entry is saved.
         let previousDomains = apps.first(where: { $0.id == oldID })?.domains ?? []
         let addedDomains = domainValues.filter { !previousDomains.contains($0) }
+        let removedDomains = previousDomains.filter { !domainValues.contains($0) }
 
         // Optimistic update
         let oldPinned = apps.first(where: { $0.id == oldID })?.pinned ?? false
@@ -399,18 +400,28 @@ final class AppController: ObservableObject {
             if self.apps.contains(where: { $0.id == id }) {
                 self.selectedAppID = id
             }
-            if code == 0, !addedDomains.isEmpty, status == .active, !firebaseID.isEmpty {
-                self.addDomains(addedDomains, toApp: id, name: name.isEmpty ? id : name)
+            if code == 0, !addedDomains.isEmpty || !removedDomains.isEmpty, status == .active, !firebaseID.isEmpty {
+                self.updateDomains(added: addedDomains, removed: removedDomains,
+                                   forApp: id, name: name.isEmpty ? id : name)
             }
         }
     }
 
-    /// Provision extra domains for an existing active app — Firebase Hosting
-    /// registration plus the Cloudflare CNAME record. The registry entry already
-    /// lists them, so the script's own registry append is a no-op here.
-    func addDomains(_ domains: [String], toApp appID: String, name: String) {
-        runAction(.addDomain(appID: appID, name: name, domains: domains),
-                  command: "./add-domain.sh -id \(Shell.quote(appID)) -domain \(Shell.quote(domains.joined(separator: ",")))")
+    /// Provision domain changes for an existing active app: added domains get a
+    /// Firebase Hosting registration plus the Cloudflare CNAME record; removed
+    /// domains get both torn down. The registry entry is already saved, so the
+    /// scripts' own registry writes are no-ops here.
+    func updateDomains(added: [String], removed: [String], forApp appID: String, name: String) {
+        var commands: [String] = []
+        if !added.isEmpty {
+            commands.append("./add-domain.sh -id \(Shell.quote(appID)) -domain \(Shell.quote(added.joined(separator: ",")))")
+        }
+        if !removed.isEmpty {
+            commands.append("./remove-domain.sh -id \(Shell.quote(appID)) -domain \(Shell.quote(removed.joined(separator: ",")))")
+        }
+        guard !commands.isEmpty else { return }
+        runAction(.updateDomains(appID: appID, name: name, added: added, removed: removed),
+                  command: commands.joined(separator: "; "))
     }
 
     /// Fire-and-collect a shell command; result delivered on the main actor.
@@ -508,7 +519,7 @@ final class AppController: ObservableObject {
             case .restore(let appID, _):
                 selectedTab = .active
                 selectedAppID = appID
-            case .addDomain(let appID, _, _):
+            case .updateDomains(let appID, _, _, _):
                 selectedTab = .active
                 selectedAppID = appID
             }

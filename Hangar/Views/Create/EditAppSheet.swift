@@ -70,7 +70,7 @@ struct EditAppSheet: View {
 
             HStack {
                 if willProvisionDomains {
-                    Text("New domains get DNS + Firebase Hosting on save.")
+                    Text("Domain changes get DNS + Firebase Hosting updates on save.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -93,11 +93,13 @@ struct EditAppSheet: View {
         }
     }
 
-    /// True when the draft holds domains the app doesn't have yet — those get
-    /// provisioned (Cloudflare CNAME + Firebase Hosting) after saving.
+    /// True when the draft adds or drops domains relative to the app — those
+    /// changes get provisioned (Cloudflare CNAME + Firebase Hosting) after saving.
     private var willProvisionDomains: Bool {
         guard draft.status == .active, !draft.firebaseProjectID.isEmpty else { return false }
-        return draft.domainValues.contains { !app.domains.contains($0) }
+        let values = draft.domainValues
+        return values.contains { !app.domains.contains($0) }
+            || app.domains.contains { !values.contains($0) }
     }
 }
 
