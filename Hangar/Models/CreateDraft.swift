@@ -32,6 +32,13 @@ final class CreateDraft: ObservableObject {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
             && !appID.isEmpty
             && !firebaseProjectID.isEmpty
+            && firebaseProjectIDError == nil
+    }
+
+    /// Why the current Firebase Project ID would be rejected by Firebase / Google
+    /// Cloud, or `nil` if it's acceptable (or still empty).
+    var firebaseProjectIDError: String? {
+        Self.firebaseProjectIDProblem(firebaseProjectID)
     }
 
     var domainValues: [String] {
@@ -86,6 +93,37 @@ final class CreateDraft: ObservableObject {
         if firebaseAuto {
             firebaseProjectID = appID.isEmpty ? "" : "\(appID)-\(firebaseSuffix)"
         }
+    }
+
+    // MARK: - Validation
+
+    /// Substrings Google Cloud refuses anywhere in a project ID.
+    static let restrictedProjectIDStrings = ["google", "ssl", "null", "undefined"]
+
+    /// Checks a Firebase Project ID against Firebase's reserved prefixes and
+    /// Google Cloud's project ID rules, so a doomed ID is caught before the
+    /// setup script runs.
+    static func firebaseProjectIDProblem(_ id: String) -> String? {
+        guard !id.isEmpty else { return nil }
+        if id.hasPrefix("demo-") {
+            return "IDs starting with “demo-” are reserved by Firebase for emulator-only demo projects."
+        }
+        if let word = restrictedProjectIDStrings.first(where: { id.contains($0) }) {
+            return "Can’t contain the reserved word “\(word)”."
+        }
+        if !id.allSatisfy({ ("a"..."z").contains($0) || ("0"..."9").contains($0) || $0 == "-" }) {
+            return "Only lowercase letters, numbers, and hyphens are allowed."
+        }
+        if let first = id.first, !("a"..."z").contains(first) {
+            return "Must start with a lowercase letter."
+        }
+        if id.hasSuffix("-") {
+            return "Can’t end with a hyphen."
+        }
+        if !(6...30).contains(id.count) {
+            return "Must be 6–30 characters (currently \(id.count))."
+        }
+        return nil
     }
 
     /// Lowercase, hyphenate spaces, and drop anything that isn't a valid App ID /

@@ -170,6 +170,15 @@ struct CreateAppForm: View {
                     }
                     FormField(label: "Firebase Project ID", auto: draft.firebaseAuto) {
                         monoField("my-new-app-idea-12345", get: { draft.firebaseProjectID }, set: { draft.setFirebaseProjectID($0) })
+                        if let error = draft.firebaseProjectIDError {
+                            Label(
+                                draft.firebaseAuto ? "\(error) Change the App ID or edit this field." : error,
+                                systemImage: "exclamationmark.triangle.fill"
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
                 .padding(.horizontal, 24)
