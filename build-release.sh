@@ -111,7 +111,8 @@ xattr -cr "$APP_PATH" 2>/dev/null || true
 pkill -x Hangar 2>/dev/null || true
 sleep 0.5
 
-open "$APP_PATH"
+# Select a consistent app for the screenshot (override with SCREENSHOT_APP_ID)
+open "$APP_PATH" --args -HangarInitialSelection "${SCREENSHOT_APP_ID:-auroras}"
 
 # Poll until the window is ready (up to 10s)
 # Uses System Events process targeting — more reliable than app-name scripting

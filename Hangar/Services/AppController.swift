@@ -39,7 +39,14 @@ final class AppController: ObservableObject {
     init() {
         scriptsDirectory = Paths.scriptsDirectory
         load()
-        selectedAppID = visibleApps.first?.id
+        // `-HangarInitialSelection <app-id>` (launch argument, not persisted) picks
+        // the app selected at launch — used by build-release.sh for the screenshot.
+        if let initial = UserDefaults.standard.string(forKey: "HangarInitialSelection"),
+           visibleApps.contains(where: { $0.id == initial }) {
+            selectedAppID = initial
+        } else {
+            selectedAppID = visibleApps.first?.id
+        }
         ensureGitHubUser()
         syncRegistry(showErrorOnFailure: false)
 
